@@ -3,6 +3,7 @@ import MobileShell from '@/components/mobile-shell';
 import NotFound from '@/components/not-found';
 import StatusBadge from '@/components/status-badge';
 import type { AdminMemberShowProps } from '@/types/pages';
+import { Link } from '@inertiajs/react';
 
 /** 生徒の詳細（代理入力は次の段階） */
 export default function AdminMemberShow({ member, months }: AdminMemberShowProps) {
@@ -36,7 +37,13 @@ export default function AdminMemberShow({ member, months }: AdminMemberShowProps
                             )}
                         </section>
                     ))}
-                    <p className="text-ink-soft text-xs">代理入力（スタッフが日程を選ぶ・変える）は次の段階で作ります。</p>
+                    <Link
+                        href={route('admin.reservations.new', { kind: 'monthly', member: member.id })}
+                        className="bg-brand mb-3 block rounded-lg py-2.5 text-center text-sm font-bold text-white"
+                    >
+                        この生徒さんの予約を入れる
+                    </Link>
+                    <p className="text-ink-soft text-xs">日程変更の代理入力は次の段階で作ります。</p>
                 </>
             )}
         </MobileShell>
