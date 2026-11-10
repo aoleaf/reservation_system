@@ -2,10 +2,10 @@
 // 本番ではコントローラーがこの役目を引き継ぎ、types/pages.ts と同じ形の props を返す。
 // selectors を呼んでよいのはここと mocks/actions.ts だけ。
 import type { ReservationKind, Settings, Slot } from '@/types/models';
-import type { AdminSlotsProps, CalendarDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
+import type { AdminSlotsProps, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
 import { addDays, datesInMonth, dayLabel, isMonth, isWeekendDate, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
 import type { MockData } from './seed';
-import { isActive, refundAmount, remaining, seatsUsed } from './selectors';
+import { canBook, changeRemaining, isActive, memberSessions, refundAmount, remaining, seatsUsed } from './selectors';
 
 export type ServerProps = Record<string, unknown>;
 export type Builder = (state: MockData, serverProps: ServerProps) => object;
@@ -169,7 +169,102 @@ const adminSlots: Builder = (s, sp): AdminSlotsProps => {
     };
 };
 
+// ---- 生徒さん ----
+
+const memberMonthOf = (s: MockData, memberId: string, month: string) => s.memberMonths.find((x) => x.memberId === memberId && x.month === month);
+const hasSlots = (s: MockData, month: string) => s.slots.some((x) => x.date.startsWith(month));
+
+/** 日程を選ぶカレンダー（月謝の残席・お休み・前日まで・追加の条件で選べるかを決める） */
+function pickDays(s: MockData, month: string, ok: (slot: Slot) => boolean): PickDay[] {
+    const tomorrow = addDays(s.today, 1);
+    return datesInMonth(month).map((date) => {
+        const raw = s.slots.filter((x) => x.date === date);
+        const slots = raw.map((x) => slotView(x, s, 'monthly', date >= tomorrow && ok(x)));
+        return {
+            ...calendarDay(date, s.today),
+            label: dayLabel(date),
+            closed: raw.length > 0 && raw.every((x) => x.blocked),
+            slots,
+            selectable: slots.some((x) => x.bookable),
+        };
+    });
+}
+
+const memberIndex: Builder = (s): MemberIndexProps => {
+    const member = s.members.find((m) => m.id === s.currentMemberId);
+    const thisMonth = monthOf(s.today);
+    const tomorrow = addDays(s.today, 1);
+    return {
+        member: member ? { id: member.id, name: member.name } : null,
+        sessionsPerMonth: s.settings.sessionsPerMonth,
+        months: !member
+            ? []
+            : [thisMonth, shiftMonth(thisMonth, 1)].map((month, i) => {
+                  const mm = memberMonthOf(s, member.id, month);
+                  const rest = changeRemaining(mm);
+                  return {
+                      month,
+                      label: `${i === 0 ? '今月' : '来月'}（${monthLabel(month)}）`,
+                      submitted: Boolean(mm?.submittedAt),
+                      changeRemaining: rest,
+                      canSchedule: !mm?.submittedAt && i === 1 && hasSlots(s, month),
+                      sessions: memberSessions(member.id, month, s.reservations, s.slots).map(({ reservation, slot }) => ({
+                          reservationId: reservation.id,
+                          date: slot.date,
+                          label: slotLabelOf(slot),
+                          past: slot.date < tomorrow,
+                          canChange: rest > 0 && slot.date >= tomorrow,
+                      })),
+                  };
+              }),
+    };
+};
+
+const memberSchedule: Builder = (s, sp): MemberScheduleProps => {
+    const month = isMonth(sp.month) ? sp.month : shiftMonth(monthOf(s.today), 1);
+    const mm = memberMonthOf(s, s.currentMemberId, month);
+    let unavailable: string | null = null;
+    if (!hasSlots(s, month)) unavailable = 'この月はまだ日程を選べません';
+    else if (mm?.submittedAt) unavailable = 'この月の日程はもう提出済みです';
+    const dates = datesInMonth(month);
+    return {
+        month,
+        monthLabel: monthLabel(month),
+        unavailable,
+        required: s.settings.sessionsPerMonth,
+        leadingBlanks: weekdayIndex(dates[0]),
+        days: pickDays(s, month, () => !unavailable),
+    };
+};
+
+const memberChange: Builder = (s, sp): MemberChangeProps => {
+    const r = s.reservations.find((x) => x.id === str(sp.reservationId) && x.memberId === s.currentMemberId && x.kind === 'monthly' && isActive(x));
+    const from = r && s.slots.find((x) => x.id === r.slotId);
+    if (!r || !from) return { reservation: null, monthLabel: '', changeRemaining: 0, blockedReason: null, leadingBlanks: 0, days: [] };
+    const month = monthOf(from.date);
+    const rest = changeRemaining(memberMonthOf(s, s.currentMemberId, month));
+    let blockedReason: string | null = null;
+    if (rest <= 0) blockedReason = 'この月の日程変更はもう使いました（月1回まで）';
+    else if (from.date < addDays(s.today, 1)) blockedReason = '日程変更はレッスンの前日までです';
+    const otherDates = new Set(
+        memberSessions(s.currentMemberId, month, s.reservations, s.slots)
+            .filter((x) => x.reservation.id !== r.id)
+            .map((x) => x.slot.date),
+    );
+    return {
+        reservation: { id: r.id, label: slotLabelOf(from) },
+        monthLabel: monthLabel(month),
+        changeRemaining: rest,
+        blockedReason,
+        leadingBlanks: weekdayIndex(`${month}-01`),
+        days: pickDays(s, month, (x) => !blockedReason && x.id !== from.id && !otherDates.has(x.date) && canBook(x, s.reservations, 'monthly', 1)),
+    };
+};
+
 export const builders: Record<string, Builder> = {
+    'member/index': memberIndex,
+    'member/schedule': memberSchedule,
+    'member/change': memberChange,
     'admin/slots': adminSlots,
     'reserve/index': reserveIndex,
     'reserve/form': reserveForm,

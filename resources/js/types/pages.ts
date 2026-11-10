@@ -90,3 +90,50 @@ export type AdminSlotsProps = {
     initialDate: ISODate;
     days: (CalendarDay & { label: string; closed: boolean; slots: SlotView[] })[];
 };
+
+// ---- 生徒さん ----
+
+export type MemberSessionView = {
+    reservationId: string;
+    date: ISODate;
+    label: string; // '11月25日（水） 10:00〜12:00'
+    past: boolean;
+    canChange: boolean;
+};
+
+export type MemberIndexProps = {
+    member: { id: string; name: string } | null;
+    months: {
+        month: string;
+        label: string; // '今月（2026年11月）'
+        submitted: boolean;
+        sessions: MemberSessionView[];
+        changeRemaining: number;
+        /** 未提出で、選びに行ける月なら true */
+        canSchedule: boolean;
+    }[];
+    sessionsPerMonth: number;
+};
+
+/** 日程を選ぶカレンダーの1日分 */
+export type PickDay = CalendarDay & { label: string; closed: boolean; slots: SlotView[]; selectable: boolean };
+
+export type MemberScheduleProps = {
+    month: string;
+    monthLabel: string;
+    /** 選べない月・提出済みのときの理由（null なら選べる） */
+    unavailable: string | null;
+    required: number;
+    leadingBlanks: number;
+    days: PickDay[];
+};
+
+export type MemberChangeProps = {
+    reservation: { id: string; label: string } | null;
+    monthLabel: string;
+    changeRemaining: number;
+    /** 変更できないときの理由（null なら変更できる） */
+    blockedReason: string | null;
+    leadingBlanks: number;
+    days: PickDay[];
+};
