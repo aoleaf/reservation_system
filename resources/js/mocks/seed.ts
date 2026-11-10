@@ -4,7 +4,7 @@ import type { Channel, ISODate, Member, MemberMonth, Reservation, Settings, Slot
 import { datesInMonth, isWeekendDate } from './dates';
 import { canBook } from './selectors';
 
-export const SEED_VERSION = 1;
+export const SEED_VERSION = 2;
 
 export type Role = 'customer' | 'member' | 'staff';
 
