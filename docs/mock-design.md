@@ -274,7 +274,7 @@ grep -rnE "mocks/|useMockStore" resources/js/pages resources/js/components
 # 2. 画面が自分で送信・遷移していないか（<Link> は OK）
 grep -rnE "router\.(post|visit|put|delete)" resources/js/pages resources/js/components
 # 3. selectors を許可のない場所で呼んでいないか
-grep -rln "selectors" resources/js | grep -vE "mocks/(props|actions|selectors)\.ts"
+grep -rln "selectors" resources/js | grep -vE "mocks/(props|actions|selectors|seed)\.ts"  # seed は「canBook を通す」ため許可
 # 4. 「今日」を実時間から取っていないか、乱数が固定されているか
 grep -rnE "new Date\(\)|Date\.now|Math\.random" resources/js
 # 5. 画面に料金や定員が直書きされていないか
