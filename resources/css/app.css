@@ -8,7 +8,25 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Noto Sans JP', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --font-mincho: 'Shippori Mincho', 'Noto Serif JP', serif;
+
+    /* つちのね：デザイントークン（クラス名に16進数を直接書かない） */
+    --color-brand: #2f4a6b;
+    --color-brand-soft: #b9c8da;
+    --color-brand-faint: #e6ecf3;
+    --color-paper: #f6f4f0;
+    --color-ink: #2b2a28;
+    --color-ink-soft: #6b6862;
+    --color-staff: #2b2a28;
+    --color-line: #dcd7cf;
+    --color-paid: #2f6b4a;
+    --color-paid-soft: #e1efe6;
+    --color-onsite: #9a5b13;
+    --color-onsite-soft: #f8ead3;
+    --color-alert: #b3261e;
+    --color-alert-soft: #f9e1df;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
