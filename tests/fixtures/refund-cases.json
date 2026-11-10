@@ -1,0 +1,12 @@
+{
+    "rate": 0.036,
+    "cases": [
+        { "amount": 4500, "slotDate": "2026-11-22", "today": "2026-11-19", "expected": 4338, "note": "3日前" },
+        { "amount": 4500, "slotDate": "2026-11-22", "today": "2026-11-20", "expected": 4338, "note": "2日前（境界）" },
+        { "amount": 4500, "slotDate": "2026-11-22", "today": "2026-11-21", "expected": 2250, "note": "前日" },
+        { "amount": 4500, "slotDate": "2026-11-22", "today": "2026-11-22", "expected": 0, "note": "当日" },
+        { "amount": 9000, "slotDate": "2026-11-22", "today": "2026-11-19", "expected": 8676, "note": "2名" },
+        { "amount": 1111, "slotDate": "2026-11-22", "today": "2026-11-19", "expected": 1071, "note": "手数料 39.996 → 40" },
+        { "amount": 4501, "slotDate": "2026-11-22", "today": "2026-11-21", "expected": 2251, "note": "2250.5 → 2251" }
+    ]
+}
