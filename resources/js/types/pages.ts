@@ -74,6 +74,8 @@ export type AdminTodayProps = {
     closed: boolean;
     slots: {
         slot: SlotView;
+        /** この枠に予約を入れるリンク（体験が入れば体験、平日など体験が無理なら月謝。どちらも無理なら null） */
+        add: { kind: ReservationKind; remaining: number } | null;
         entries: { id: string; name: string; kind: ReservationKind; partySize: number; payment: PaymentKind; channel: Channel; channelLabel: string }[];
     }[];
 };
@@ -139,10 +141,17 @@ export type MemberChangeProps = {
 };
 
 export type AdminReservationNewProps = {
+    /** 体験か、月謝の生徒か */
+    kind: ReservationKind;
     date: ISODate;
     label: string;
-    /** 体験を受けられない日（平日など）のときの説明 */
+    /** 選べない日（体験の平日、お休みなど）のときの説明 */
     dateNote: string | null;
+    /** 月謝のときだけ：その日の月での各生徒の回数と、もう入っている日 */
+    monthLabel: string;
+    required: number;
+    members: { id: string; name: string; count: number; dates: ISODate[] }[];
+    initialMemberId: string | null;
     dateOptions: { date: ISODate; label: string }[];
     slots: SlotView[];
     initialSlotId: SlotId | null;
