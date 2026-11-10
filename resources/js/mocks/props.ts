@@ -2,8 +2,8 @@
 // 本番ではコントローラーがこの役目を引き継ぎ、types/pages.ts と同じ形の props を返す。
 // selectors を呼んでよいのはここと mocks/actions.ts だけ。
 import type { ReservationKind, Settings, Slot } from '@/types/models';
-import type { ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
-import { addDays, dayLabel, isWeekendDate, weekdayJa } from './dates';
+import type { AdminSlotsProps, CalendarDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
+import { addDays, datesInMonth, dayLabel, isMonth, isWeekendDate, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
 import type { MockData } from './seed';
 import { isActive, refundAmount, remaining, seatsUsed } from './selectors';
 
@@ -147,7 +147,30 @@ const reserveCancel: Builder = (s, sp): ReserveCancelProps => {
     };
 };
 
+// ---- スタッフ：月カレンダー ----
+
+const calendarDay = (date: string, today: string): CalendarDay => ({ date, day: Number(date.slice(8, 10)), weekdayIndex: weekdayIndex(date), isToday: date === today });
+
+const adminSlots: Builder = (s, sp): AdminSlotsProps => {
+    const month = isMonth(sp.month) ? sp.month : monthOf(s.today);
+    const dates = datesInMonth(month);
+    const days = dates.map((date) => {
+        const slots = s.slots.filter((x) => x.date === date).map((x) => slotView(x, s, 'monthly'));
+        return { ...calendarDay(date, s.today), label: dayLabel(date), closed: slots.length > 0 && slots.every((x) => x.blocked), slots };
+    });
+    return {
+        month,
+        monthLabel: monthLabel(month),
+        prevMonth: shiftMonth(month, -1),
+        nextMonth: shiftMonth(month, 1),
+        leadingBlanks: weekdayIndex(dates[0]),
+        initialDate: monthOf(s.today) === month ? s.today : dates[0],
+        days,
+    };
+};
+
 export const builders: Record<string, Builder> = {
+    'admin/slots': adminSlots,
     'reserve/index': reserveIndex,
     'reserve/form': reserveForm,
     'reserve/confirm': reserveConfirm,

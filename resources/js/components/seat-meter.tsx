@@ -5,13 +5,13 @@ export default function SeatMeter({ monthly, trial, capacity, compact = false }:
     const cells = Array.from({ length: capacity }, (_, i) => (i < monthly ? 'monthly' : i < monthly + trial ? 'trial' : 'free'));
     return (
         <div className="flex items-center gap-2" aria-label={`月謝${monthly}・体験${trial}／${capacity}`}>
-            <div className="flex gap-0.5">
+            <div className={'flex ' + (compact ? 'gap-px' : 'gap-0.5')}>
                 {cells.map((c, i) => (
                     <span
                         key={i}
                         className={
-                            (compact ? 'h-2.5 w-2 ' : 'h-3.5 w-3 ') +
-                            'rounded-[2px] border ' +
+                            (compact ? 'h-2 w-1.5 ' : 'h-3.5 w-3 ') +
+                            (compact ? 'rounded-[1px] border ' : 'rounded-[2px] border ') +
                             (c === 'monthly' ? 'border-brand bg-brand' : c === 'trial' ? 'border-brand/60 bg-brand-soft' : 'border-line bg-white')
                         }
                     />
