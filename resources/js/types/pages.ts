@@ -77,3 +77,16 @@ export type AdminTodayProps = {
         entries: { id: string; name: string; kind: ReservationKind; partySize: number; payment: PaymentKind; channel: Channel; channelLabel: string }[];
     }[];
 };
+
+/** 月カレンダーの1日分（MonthCalendar 用の共通部分） */
+export type CalendarDay = { date: ISODate; day: number; weekdayIndex: number; isToday: boolean };
+
+export type AdminSlotsProps = {
+    month: string;
+    monthLabel: string;
+    prevMonth: string;
+    nextMonth: string;
+    leadingBlanks: number;
+    initialDate: ISODate;
+    days: (CalendarDay & { label: string; closed: boolean; slots: SlotView[] })[];
+};

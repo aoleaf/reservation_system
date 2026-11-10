@@ -20,7 +20,7 @@ export function withMockProps(name: string, mod: PageModule): PageModule {
         const props = builder ? { ...serverProps, ...builder(state, serverProps) } : serverProps;
         return (
             <>
-                <DemoBar />
+                <DemoBar page={name} />
                 <Page {...props} />
             </>
         );

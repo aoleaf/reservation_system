@@ -18,8 +18,12 @@ const DAYS = [
     { date: '2026-11-22', label: '当日' },
 ];
 
-export default function DemoBar() {
-    const role = useMockStore((s) => s.role);
+/** いま開いているページから立場を決める（入口のリンクから来たときもずれないように） */
+const roleOfPage = (page: string): Role | null => (page.startsWith('admin/') ? 'staff' : page.startsWith('member/') ? 'member' : page.startsWith('reserve/') ? 'customer' : null);
+
+export default function DemoBar({ page }: { page: string }) {
+    const storedRole = useMockStore((s) => s.role);
+    const role = roleOfPage(page) ?? storedRole;
     const today = useMockStore((s) => s.today);
     const setRole = useMockStore((s) => s.setRole);
     const setToday = useMockStore((s) => s.setToday);
