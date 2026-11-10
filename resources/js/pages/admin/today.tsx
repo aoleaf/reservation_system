@@ -32,7 +32,7 @@ export default function AdminToday({ date, label, isToday, prevDate, nextDate, c
             {slots.length === 0 && <p className="text-ink-soft text-sm">この日は枠がありません。</p>}
 
             <div className="space-y-3">
-                {slots.map(({ slot, entries }) => (
+                {slots.map(({ slot, add, entries }) => (
                     <section key={slot.id} className={'border-line rounded-lg border p-3 ' + (slot.blocked ? 'bg-line/40' : 'bg-white')}>
                         <div className="mb-2 flex items-center gap-2">
                             <h3 className="font-bold whitespace-nowrap tabular-nums">
@@ -54,9 +54,12 @@ export default function AdminToday({ date, label, isToday, prevDate, nextDate, c
                         ) : (
                             !slot.blocked && <p className="text-ink-soft mt-2 text-sm">予約はありません</p>
                         )}
-                        {slot.bookable && (
-                            <Link href={route('admin.reservations.new', { date, slot: slot.id })} className="text-brand mt-2 inline-block text-xs font-bold underline">
-                                この枠に体験の予約を入れる（残り{slot.remaining}席）
+                        {add && (
+                            <Link
+                                href={route('admin.reservations.new', { date, slot: slot.id, ...(add.kind === 'monthly' ? { kind: 'monthly' } : {}) })}
+                                className="text-brand mt-2 inline-block text-xs font-bold underline"
+                            >
+                                この枠に{add.kind === 'monthly' ? '月謝' : '体験'}の予約を入れる（残り{add.remaining}席）
                             </Link>
                         )}
                     </section>

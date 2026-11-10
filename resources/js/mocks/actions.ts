@@ -38,10 +38,31 @@ export const mockActions: Actions = {
         router.visit(route('reserve.complete', res.id));
     },
 
-    createStaffReservation({ slotId, partySize, contact, channel }, cb) {
+    createStaffReservation(input, cb) {
         const s = st();
-        const slot = s.slots.find((x) => x.id === slotId);
+        const slot = s.slots.find((x) => x.id === input.slotId);
         if (!slot) return fail(cb, { slotId: '枠が見つかりません' });
+
+        if (input.kind === 'monthly') {
+            // 月謝の生徒の代理入力：同じ日に2回・月の回数超え・月謝の残席なし は入れない
+            const member = s.members.find((m) => m.id === input.memberId);
+            if (!member) return fail(cb, { memberId: '生徒さんを選んでください' });
+            const month = monthOf(slot.date);
+            const sessions = memberSessions(member.id, month, s.reservations, s.slots);
+            if (sessions.some((x) => x.slot.date === slot.date)) return fail(cb, { slotId: 'この生徒さんは同じ日にもう予約があります' });
+            if (sessions.length >= s.settings.sessionsPerMonth) return fail(cb, { memberId: `この月はもう${s.settings.sessionsPerMonth}回入っています。日程を移すときは日程変更で` });
+            if (!canBook(slot, s.reservations, 'monthly', 1)) return fail(cb, { slotId: FULL });
+            s.addReservation({ slotId: slot.id, kind: 'monthly', channel: input.channel, partySize: 1, status: 'confirmed', amount: 0, memberId: member.id });
+            // 回数がそろったら、その月を提出済みにする
+            const mm = s.memberMonths.find((x) => x.memberId === member.id && x.month === month);
+            if (sessions.length + 1 === s.settings.sessionsPerMonth && !mm?.submittedAt) {
+                st().upsertMemberMonth({ memberId: member.id, month, submittedAt: `${s.today}T12:00:00`, changeUsed: mm?.changeUsed ?? false });
+            }
+            cb?.onFinish?.();
+            return router.visit(route('admin.today', { date: slot.date }));
+        }
+
+        const { slotId, partySize, contact, channel } = input;
         if (!contact.name.trim()) return fail(cb, { contact: 'お名前を入力してください' });
         if (!canBook(slot, s.reservations, 'trial', partySize)) return fail(cb, { slotId: FULL });
         s.addReservation({

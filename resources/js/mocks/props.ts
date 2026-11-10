@@ -283,6 +283,13 @@ const adminToday: Builder = (s, sp): AdminTodayProps => {
         closed: raw.length > 0 && raw.every((x) => x.blocked),
         slots: raw.map((slot) => ({
             slot: slotView(slot, s, 'trial'),
+            add: slot.blocked
+                ? null
+                : remaining(slot, s.reservations, 'trial') > 0
+                  ? { kind: 'trial' as const, remaining: remaining(slot, s.reservations, 'trial') }
+                  : remaining(slot, s.reservations, 'monthly') > 0
+                    ? { kind: 'monthly' as const, remaining: remaining(slot, s.reservations, 'monthly') }
+                    : null,
             entries: s.reservations
                 .filter((r) => r.slotId === slot.id && isActive(r))
                 .sort((a, b) => (a.kind === b.kind ? a.createdAt.localeCompare(b.createdAt) : a.kind === 'monthly' ? -1 : 1))
@@ -300,17 +307,32 @@ const adminToday: Builder = (s, sp): AdminTodayProps => {
 };
 
 const adminReservationNew: Builder = (s, sp): AdminReservationNewProps => {
+    const kind: ReservationKind = str(sp.kind) === 'monthly' ? 'monthly' : 'trial';
     const date = dateParam(s, sp.date);
+    const month = monthOf(date);
     const raw = s.slots.filter((x) => x.date === date);
-    const slots = raw.map((x) => slotView(x, s, 'trial'));
-    const dateOptions = [...new Set(s.slots.filter((x) => x.date >= s.today && x.trialOpen).map((x) => x.date))]
-        .slice(0, 12)
+    const slots = raw.map((x) => slotView(x, s, kind));
+    const dateOptions = [...new Set(s.slots.filter((x) => x.date >= s.today && !x.blocked && (kind === 'monthly' || x.trialOpen)).map((x) => x.date))]
+        .slice(0, kind === 'monthly' ? 21 : 12)
         .map((d) => ({ date: d, label: dayLabel(d) }));
     let dateNote: string | null = null;
     if (raw.length === 0) dateNote = 'この日は枠がありません';
-    else if (!raw.some((x) => x.trialOpen)) dateNote = '体験レッスンは土曜・日曜だけです。下から日を選んでください';
+    else if (raw.every((x) => x.blocked)) dateNote = 'この日はお休みです';
+    else if (kind === 'trial' && !raw.some((x) => x.trialOpen)) dateNote = '体験レッスンは土曜・日曜だけです。上から日を選んでください';
     const wanted = slots.find((x) => x.id === str(sp.slotId) && x.bookable);
+    const members =
+        kind === 'monthly'
+            ? s.members.map((m) => {
+                  const sessions = memberSessions(m.id, month, s.reservations, s.slots);
+                  return { id: m.id, name: m.name, count: sessions.length, dates: sessions.map((x) => x.slot.date) };
+              })
+            : [];
     return {
+        kind,
+        monthLabel: monthLabel(month),
+        required: s.settings.sessionsPerMonth,
+        members,
+        initialMemberId: members.find((m) => m.id === str(sp.member))?.id ?? null,
         date,
         label: dayLabel(date),
         dateNote,

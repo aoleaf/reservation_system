@@ -7,7 +7,10 @@ export type Callbacks = {
 };
 
 export type CreateWebReservationInput = { slotId: SlotId; partySize: number; contact: Contact };
-export type CreateStaffReservationInput = { slotId: SlotId; partySize: number; contact: Contact; channel: 'phone' | 'dm' | 'staff' };
+/** スタッフの予約入力。体験は人数と連絡先、月謝は生徒を指定する（1名） */
+export type CreateStaffReservationInput =
+    | { kind: 'trial'; slotId: SlotId; channel: 'phone' | 'dm' | 'staff'; partySize: number; contact: Contact }
+    | { kind: 'monthly'; slotId: SlotId; channel: 'phone' | 'dm' | 'staff'; memberId: string };
 export type SubmitMonthlyScheduleInput = { month: string; slotIds: SlotId[] };
 export type ChangeMonthlySessionInput = { reservationId: string; toSlotId: SlotId };
 export type SetSlotBlockedInput = { slotId: SlotId; blocked: boolean };

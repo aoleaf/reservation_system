@@ -297,3 +297,4 @@ grep -rnE "4500|4,500|0\.036" resources/js/pages resources/js/components
 - 月謝の「前月 15〜25 日」「前日まで」「土日 3 名」は仮の値。settings に出すか
 - selectors を PHP に移すときは、同じ refund-cases.json でテストする。round() の半端の扱いが JS と合うかもこの表で確かめる
 - リンクは Wayfinder の予定だったが、スターターキットに Ziggy が入っていたため Ziggy の route() を使った。BE期に Wayfinder へ移すか決める
+- スタッフの予約入力で月謝の生徒も入れられるようにした（1名、同じ日に2回不可、月の回数を超える追加は不可、4回そろったら提出済み扱い）。振替や回数を超える追加レッスンを受けるか、平日の月謝に定員以外の上限があるかは meet で確認する
