@@ -13,6 +13,9 @@ export type MockStore = MockData & {
     upsertMemberMonth: (mm: MemberMonth) => void;
     setToday: (today: ISODate) => void;
     setRole: (role: Role) => void;
+    /** DemoBar を開いているか（リセットしても変えない） */
+    demoOpen: boolean;
+    setDemoOpen: (open: boolean) => void;
     reset: () => void;
 };
 
@@ -35,6 +38,8 @@ export const useMockStore = create<MockStore>()(
                 }),
             setToday: (today) => set({ today }),
             setRole: (role) => set({ role }),
+            demoOpen: false,
+            setDemoOpen: (demoOpen) => set({ demoOpen }),
             reset: () => set({ ...createSeed() }),
         }),
         {
