@@ -137,3 +137,27 @@ export type MemberChangeProps = {
     leadingBlanks: number;
     days: PickDay[];
 };
+
+export type AdminReservationNewProps = {
+    date: ISODate;
+    label: string;
+    /** 体験を受けられない日（平日など）のときの説明 */
+    dateNote: string | null;
+    dateOptions: { date: ISODate; label: string }[];
+    slots: SlotView[];
+    initialSlotId: SlotId | null;
+    channels: { value: 'phone' | 'dm'; label: string }[];
+};
+
+export type AdminMembersProps = {
+    month: string;
+    monthLabel: string;
+    filter: 'all' | 'unsubmitted';
+    counts: { all: number; unsubmitted: number };
+    members: { id: string; name: string; phone: string; submitted: boolean }[];
+};
+
+export type AdminMemberShowProps = {
+    member: { id: string; name: string; phone: string; email: string } | null;
+    months: { month: string; label: string; submitted: boolean; changeRemaining: number; sessions: string[] }[];
+};
