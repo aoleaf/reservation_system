@@ -72,7 +72,8 @@ const reserveIndex: Builder = (s, sp): ReserveIndexProps => {
     const dates = datesInMonth(month);
     const days = dates.map((date) => {
         const raw = s.slots.filter((x) => x.date === date);
-        const open = date >= from && raw.some((x) => x.trialOpen && x.status !== 'closed');
+        // 受付停止・お休みだけの日は、お客様には「受付なし（−）」と見せる（満席の × とは分ける）
+        const open = date >= from && raw.some((x) => x.trialOpen && x.status === 'open');
         const slots = open ? raw.map((x) => slotView(x, s, 'trial')) : [];
         const rest = slots.reduce((sum, x) => sum + (x.bookable ? x.remaining : 0), 0);
         const mark: AvailabilityMark = !open ? 'none' : rest === 0 ? 'full' : rest <= FEW_SEATS ? 'few' : 'ok';
