@@ -107,14 +107,30 @@ export type AdminTodayProps = {
 /** 月カレンダーの1日分（MonthCalendar 用の共通部分） */
 export type CalendarDay = { date: ISODate; day: number; weekdayIndex: number; isToday: boolean };
 
+/** スタッフのカレンダーの1枠。埋まり具合の濃さと、お休みにできるか */
+export type AdminSlotCell = SlotView & {
+    /** 入っている席の合計（月謝＋体験） */
+    usedTotal: number;
+    /** 埋まり具合の濃さ（0=空き 〜 4=満席） */
+    fill: 0 | 1 | 2 | 3 | 4;
+    /** 予約の件数（お休みにできない理由の表示用） */
+    reservationCount: number;
+    /** 予約が無く、お休みにできるか */
+    canClose: boolean;
+};
+
 export type AdminSlotsProps = {
+    /** 表示する2か月の最初の月 */
     month: string;
-    monthLabel: string;
     prevMonth: string;
     nextMonth: string;
-    leadingBlanks: number;
+    months: {
+        month: string;
+        label: string;
+        leadingBlanks: number;
+        days: (CalendarDay & { label: string; closed: boolean; slots: AdminSlotCell[] })[];
+    }[];
     initialDate: ISODate;
-    days: (CalendarDay & { label: string; closed: boolean; slots: SlotView[] })[];
 };
 
 // ---- 生徒さん ----

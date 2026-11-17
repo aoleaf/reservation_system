@@ -2,7 +2,7 @@
 // 本番ではコントローラーがこの役目を引き継ぎ、types/pages.ts と同じ形の props を返す。
 // selectors を呼んでよいのはここと mocks/actions.ts だけ。
 import type { Channel, Reservation, ReservationKind, Settings, Slot } from '@/types/models';
-import type { AvailabilityMark, AdminMemberShowProps, AdminMembersProps, AdminReservationNewProps, AdminSlotsProps, AdminTodayProps, PaymentKind, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
+import type { AvailabilityMark, AdminMemberShowProps, AdminSlotCell, AdminMembersProps, AdminReservationNewProps, AdminSlotsProps, AdminTodayProps, PaymentKind, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
 import { addDays, datesInMonth, dayLabel, isISODate, isMonth, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
 import type { MockData } from './seed';
 import { canBook, changeRemaining, isActive, memberSessions, refundAmount, remaining, scheduleWindow, seatsUsed } from './selectors';
@@ -176,21 +176,40 @@ const reserveCancel: Builder = (s, sp): ReserveCancelProps => {
 
 const calendarDay = (date: string, today: string): CalendarDay => ({ date, day: Number(date.slice(8, 10)), weekdayIndex: weekdayIndex(date), isToday: date === today });
 
+/** 埋まり具合の濃さ：0 席=0、1〜2 席=1、3〜4 席=2、5 席=3、満席=4（定員 6 のとき） */
+const fillOf = (used: number, capacity: number): AdminSlotCell['fill'] => {
+    if (used <= 0) return 0;
+    if (used >= capacity) return 4;
+    return Math.min(3, Math.ceil((used / capacity) * 3)) as 1 | 2 | 3;
+};
+
 const adminSlots: Builder = (s, sp): AdminSlotsProps => {
     const month = isMonth(sp.month) ? sp.month : monthOf(s.today);
-    const dates = datesInMonth(month);
-    const days = dates.map((date) => {
-        const slots = s.slots.filter((x) => x.date === date).map((x) => slotView(x, s, 'monthly'));
-        return { ...calendarDay(date, s.today), label: dayLabel(date), closed: slots.length > 0 && slots.every((x) => x.status === 'closed'), slots };
+    const months = [month, shiftMonth(month, 1)].map((m) => {
+        const dates = datesInMonth(m);
+        return {
+            month: m,
+            label: monthLabel(m),
+            leadingBlanks: weekdayIndex(dates[0]),
+            days: dates.map((date) => {
+                const slots = s.slots
+                    .filter((x) => x.date === date)
+                    .map((x): AdminSlotCell => {
+                        const v = slotView(x, s, 'monthly');
+                        const usedTotal = v.used.monthly + v.used.trial;
+                        const reservationCount = s.reservations.filter((r) => r.slotId === x.id && isActive(r)).length;
+                        return { ...v, usedTotal, fill: fillOf(usedTotal, x.capacity), reservationCount, canClose: reservationCount === 0 };
+                    });
+                return { ...calendarDay(date, s.today), label: dayLabel(date), closed: slots.length > 0 && slots.every((x) => x.status === 'closed'), slots };
+            }),
+        };
     });
     return {
         month,
-        monthLabel: monthLabel(month),
         prevMonth: shiftMonth(month, -1),
         nextMonth: shiftMonth(month, 1),
-        leadingBlanks: weekdayIndex(dates[0]),
-        initialDate: monthOf(s.today) === month ? s.today : dates[0],
-        days,
+        months,
+        initialDate: monthOf(s.today) === month ? s.today : `${month}-01`,
     };
 };
 
