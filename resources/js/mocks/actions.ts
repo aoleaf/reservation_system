@@ -21,7 +21,7 @@ export const mockActions: Actions = {
         const s = st();
         const slot = s.slots.find((x) => x.id === slotId);
         if (!slot) return fail(cb, { slotId: '枠が見つかりません' });
-        if (!contact.name.trim() || !contact.phone.trim()) return fail(cb, { contact: 'お名前と電話番号を入力してください' });
+        if (!contact.name.trim() || !contact.phone.trim() || !contact.email?.trim()) return fail(cb, { contact: 'お名前・電話番号・メールアドレスを入力してください' });
         if (!canBook(slot, s.reservations, 'trial', partySize)) return fail(cb, { slotId: FULL });
         // モックでは決済を省略し、いきなり confirmed にする
         const res = s.addReservation({

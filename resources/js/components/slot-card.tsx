@@ -11,19 +11,19 @@ type Props = {
     selected?: boolean;
     /** 残席の書き方（体験なら「残り3席」） */
     showRemaining?: boolean;
+    /** 月謝・体験の内訳（SeatMeter）を出すか。お客様の画面では出さない */
+    showMeter?: boolean;
 };
 
 /** 枠を選ぶ画面のカード。bookable=false ならグレーで押せない */
-export default function SlotCard({ slot, href, onClick, selected = false, showRemaining = true }: Props) {
+export default function SlotCard({ slot, href, onClick, selected = false, showRemaining = true, showMeter = true }: Props) {
     const body = (
         <div className="flex items-center gap-3">
             <div className="w-24 shrink-0">
                 <div className="text-base font-bold tabular-nums">{slot.start}</div>
                 <div className="text-ink-soft text-xs tabular-nums">〜{slot.end}</div>
             </div>
-            <div className="min-w-0 flex-1">
-                <SeatMeter monthly={slot.used.monthly} trial={slot.used.trial} capacity={slot.capacity} />
-            </div>
+            <div className="min-w-0 flex-1">{showMeter && <SeatMeter monthly={slot.used.monthly} trial={slot.used.trial} capacity={slot.capacity} />}</div>
             <div className="shrink-0 text-right text-sm">
                 {slot.status !== 'open' ? (
                     <StatusBadge kind={slot.status} />

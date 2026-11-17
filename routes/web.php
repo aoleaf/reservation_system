@@ -14,7 +14,9 @@ use Inertia\Inertia;
 Route::get('/', fn () => Inertia::render('demo'))->name('demo');
 
 // お客様：体験予約
-Route::get('/reserve', fn () => Inertia::render('reserve/index'))->name('reserve.index');
+Route::get('/reserve', fn (Request $r) => Inertia::render('reserve/index', [
+    'month' => $r->query('month'),
+]))->name('reserve.index');
 
 Route::get('/reserve/form', fn (Request $r) => Inertia::render('reserve/form', [
     'slotId' => $r->query('slot'),
