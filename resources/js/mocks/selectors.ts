@@ -1,7 +1,7 @@
 // 残席・予約可否・返金額の計算（すべて純粋関数）。
 // 呼んでよいのは mocks/props.ts と mocks/actions.ts だけ。BE期に PHP へ移植し、同じ fixture で照合する。
-import { differenceInCalendarDays, parseISO } from 'date-fns';
-import type { ISODate, MemberMonth, Reservation, ReservationKind, Slot } from '@/types/models';
+import { addMonths, differenceInCalendarDays, format, parseISO } from 'date-fns';
+import type { ISODate, MemberMonth, Reservation, ReservationKind, Settings, Slot } from '@/types/models';
 
 /** 席を占有している予約か（pending / confirmed） */
 export const isActive = (r: Reservation) => r.status === 'pending' || r.status === 'confirmed';
@@ -45,3 +45,15 @@ export function memberSessions(memberId: string, month: string, rs: Reservation[
 }
 
 export const changeRemaining = (mm: MemberMonth | undefined) => (mm?.changeUsed ? 0 : 1);
+
+/**
+ * 月謝の日程を出せる期間：前月の scheduleOpenDay 日 〜 scheduleDeadlineDay 日（両端を含む）。
+ * state は today がその期間の前か・中か・後か。
+ */
+export function scheduleWindow(month: string, settings: Settings, today: ISODate) {
+    const prev = format(addMonths(parseISO(`${month}-01`), -1), 'yyyy-MM');
+    const opens = `${prev}-${String(settings.scheduleOpenDay).padStart(2, '0')}`;
+    const closes = `${prev}-${String(settings.scheduleDeadlineDay).padStart(2, '0')}`;
+    const state: 'before' | 'open' | 'closed' = today < opens ? 'before' : today > closes ? 'closed' : 'open';
+    return { opens, closes, state };
+}

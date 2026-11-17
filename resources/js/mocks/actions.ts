@@ -3,7 +3,7 @@
 import type { Actions, Callbacks } from '@/lib/actions/types';
 import { router } from '@inertiajs/react';
 import { addDays, monthOf } from './dates';
-import { canBook, changeRemaining, isActive, memberSessions, refundAmount, seatsUsed } from './selectors';
+import { canBook, changeRemaining, isActive, memberSessions, refundAmount, scheduleWindow, seatsUsed } from './selectors';
 import { useMockStore } from './store';
 
 const FULL = '満席になりました。別の枠をお選びください';
@@ -83,6 +83,7 @@ export const mockActions: Actions = {
         const memberId = s.currentMemberId;
         const mm = s.memberMonths.find((x) => x.memberId === memberId && x.month === month);
         if (mm?.submittedAt) return fail(cb, { slotIds: 'この月はもう提出済みです' });
+        if (scheduleWindow(month, s.settings, s.today).state !== 'open') return fail(cb, { slotIds: 'この月の日程の受付期間ではありません。お店にご連絡ください' });
         if (slotIds.length !== s.settings.sessionsPerMonth) return fail(cb, { slotIds: `${s.settings.sessionsPerMonth}つ選んでください` });
         const picked = slotIds.map((id) => s.slots.find((x) => x.id === id));
         if (picked.some((x) => !x || monthOf(x.date) !== month)) return fail(cb, { slotIds: '選べない枠が含まれています' });
