@@ -30,6 +30,8 @@ const RIGHT = 'right-[max(0.75rem,calc(50%-210px+0.75rem))]';
 export default function DemoBar({ page }: { page: string }) {
     const storedRole = useMockStore((s) => s.role);
     const role = roleOfPage(page) ?? storedRole;
+    // スタッフ画面は PC 幅なので、ボタンとメニューを画面の右端に置く
+    const wide = page.startsWith('admin/');
     const today = useMockStore((s) => s.today);
     const open = useMockStore((s) => s.demoOpen);
     const setOpen = useMockStore((s) => s.setDemoOpen);
@@ -45,7 +47,7 @@ export default function DemoBar({ page }: { page: string }) {
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="確認用のメニューを開く"
-                className={`bg-ink/60 fixed bottom-20 z-50 flex h-9 w-9 items-center justify-center rounded-full text-white shadow ${RIGHT}`}
+                className={`bg-ink/60 fixed bottom-20 z-50 flex h-9 w-9 items-center justify-center rounded-full text-white shadow ${wide ? 'right-4 md:bottom-6' : RIGHT}`}
             >
                 <SlidersHorizontal className="h-4 w-4" />
             </button>
@@ -55,8 +57,8 @@ export default function DemoBar({ page }: { page: string }) {
     const chip = (active: boolean) => 'rounded px-2 py-1 ' + (active ? 'bg-white text-ink font-bold' : 'bg-white/15');
 
     return (
-        <div className="fixed inset-x-0 top-0 z-50">
-            <div className="bg-ink mx-auto w-full max-w-[420px] space-y-1.5 px-3 py-2 text-xs text-white shadow-lg">
+        <div className={wide ? 'fixed top-0 right-0 z-50 w-full max-w-[420px] md:top-16 md:right-4' : 'fixed inset-x-0 top-0 z-50'}>
+            <div className={'bg-ink mx-auto w-full max-w-[420px] space-y-1.5 px-3 py-2 text-xs text-white shadow-lg ' + (wide ? 'md:rounded-lg' : '')}>
                 <div className="flex items-center gap-2">
                     <span className="font-bold">確認用メニュー</span>
                     <span className="opacity-70">今日 {shortDayLabel(today)}</span>
