@@ -128,6 +128,10 @@ export type AdminSlotCell = SlotView & {
     usedTotal: number;
     /** 埋まり具合の濃さ（0=空き 〜 4=満席） */
     fill: 0 | 1 | 2 | 3 | 4;
+    /** 体験だけ受けられる空き（土日で月謝が上限に達した枠の空き席。それ以外は 0） */
+    trialOnlyFree: number;
+    /** 枠の印。満席を優先し、満席でなく月謝が上限なら monthlyFull。どちらでもなければ null */
+    mark: 'full' | 'monthlyFull' | null;
     /** 予約の件数（お休みにできない理由の表示用） */
     reservationCount: number;
     /** 予約が無く、お休みにできるか */

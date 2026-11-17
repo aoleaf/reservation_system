@@ -1,6 +1,7 @@
 import AdminShell from '@/components/admin-shell';
 import MonthCalendar from '@/components/month-calendar';
 import SeatMeter from '@/components/seat-meter';
+import SlotBar from '@/components/slot-bar';
 import StatusBadge from '@/components/status-badge';
 import { setSlotStatus } from '@/lib/actions';
 import type { SlotStatus } from '@/types/models';
@@ -15,43 +16,15 @@ const STATUS_OPTIONS: { value: SlotStatus; label: string }[] = [
     { value: 'closed', label: 'お休み' },
 ];
 
-/** 埋まり具合の濃さ（0=空き 〜 4=満席）。明るさでも区別できるよう、濃い2段は文字を白に */
-const FILL: Record<AdminSlotCell['fill'], string> = {
-    0: 'bg-white text-ink-soft',
-    1: 'bg-brand/15 text-ink',
-    2: 'bg-brand/35 text-ink',
-    3: 'bg-brand/70 text-white',
-    4: 'bg-brand text-white font-bold',
-};
-
-/** 1枠ぶんの小さな行（時間と「4/6」）。受付停止・お休みは斜線とグレーで示す */
-function SlotChip({ s }: { s: AdminSlotCell }) {
-    const title =
-        `${s.start} 月謝${s.used.monthly}・体験${s.used.trial}／${s.capacity}` +
-        (s.status === 'paused' ? '（受付停止）' : s.status === 'closed' ? '（お休み）' : '');
-    if (s.status === 'closed') {
-        return (
-            <span
-                title={title}
-                className="bg-line/80 text-ink-soft/70 flex items-center justify-between rounded-sm px-1 text-[10px] leading-4 line-through"
-            >
-                <span className="hidden sm:inline">{s.start.slice(0, 2)}</span>
-                <span>休</span>
-            </span>
-        );
-    }
+/** 1枠ぶんの行：内訳の帯と「4/6」。スマホ幅では数字を出さず帯だけにする */
+function SlotRow({ s }: { s: AdminSlotCell }) {
     return (
-        <span
-            title={title}
-            className={
-                'flex items-center justify-between rounded-sm px-1 text-[10px] leading-4 tabular-nums ' +
-                FILL[s.fill] +
-                (s.status === 'paused' ? ' outline-onsite outline-2 -outline-offset-2 outline-dashed' : '')
-            }
-        >
-            <span className="hidden opacity-70 sm:inline">{s.start.slice(0, 2)}</span>
-            <span>
-                {s.usedTotal}/{s.capacity}
+        <span className="flex items-center gap-1" title={`${s.start} 月謝${s.used.monthly}・体験${s.used.trial}／${s.capacity}`}>
+            <SlotBar monthly={s.used.monthly} trial={s.used.trial} capacity={s.capacity} trialOnlyFree={s.trialOnlyFree} status={s.status} />
+            <span
+                className={'hidden w-6 shrink-0 text-right text-[10px] tabular-nums sm:inline ' + (s.status === 'closed' ? 'text-ink-soft/60' : '')}
+            >
+                {s.status === 'closed' ? '休' : `${s.usedTotal}/${s.capacity}`}
             </span>
         </span>
     );
@@ -93,15 +66,32 @@ export default function AdminSlots({ prevMonth, nextMonth, months, initialDate }
                 </div>
             }
         >
-            <p className="text-ink-soft mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                <span>埋まり具合（席数／定員）：</span>
-                {([0, 1, 2, 3, 4] as const).map((f) => (
-                    <span key={f} className={'rounded-sm px-1.5 leading-5 ' + FILL[f]}>
-                        {['空き', '1〜2', '3〜4', '5', '満席'][f]}
-                    </span>
-                ))}
-                <span className="outline-onsite rounded-sm px-1.5 leading-5 outline-2 -outline-offset-2 outline-dashed">受付停止</span>
-                <span className="bg-line/80 rounded-sm px-1.5 leading-5 line-through">休</span>
+            <p className="text-ink-soft mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                <span className="flex items-center gap-1">
+                    <span className="bg-brand inline-block h-2.5 w-4 rounded-sm" />
+                    月謝
+                </span>
+                <span className="flex items-center gap-1">
+                    <span className="bg-brand-soft inline-block h-2.5 w-4 rounded-sm" />
+                    体験
+                </span>
+                <span className="flex items-center gap-1">
+                    <span className="bg-hatch inline-block h-2.5 w-4 rounded-sm" />
+                    体験のみ可（月謝が上限）
+                </span>
+                <span className="flex items-center gap-1">
+                    <span className="border-line inline-block h-2.5 w-4 rounded-sm border bg-white" />
+                    空き
+                </span>
+                <span className="flex items-center gap-1">
+                    <span className="outline-onsite inline-block h-2.5 w-4 rounded-sm bg-white outline-2 outline-dashed" />
+                    受付停止
+                </span>
+                <span className="flex items-center gap-1">
+                    <span className="bg-line inline-block h-2.5 w-4 rounded-sm" />
+                    お休み
+                </span>
+                <span>各日：上から 10:00 / 13:00 / 15:30</span>
             </p>
 
             <div className="grid gap-6 lg:grid-cols-2">
@@ -118,7 +108,7 @@ export default function AdminSlots({ prevMonth, nextMonth, months, initialDate }
                                     aria-label={d.label}
                                     aria-pressed={d.date === selected}
                                     className={
-                                        'flex w-full flex-col gap-px rounded-md border p-0.5 text-left ' +
+                                        'flex w-full flex-col gap-1 rounded-md border px-1 pt-0.5 pb-1.5 text-left ' +
                                         (d.date === selected ? 'border-brand ring-brand ring-2' : 'border-line') +
                                         (d.closed ? 'bg-line/50' : 'bg-white')
                                     }
@@ -132,7 +122,7 @@ export default function AdminSlots({ prevMonth, nextMonth, months, initialDate }
                                         {d.day}
                                     </span>
                                     {d.slots.map((s) => (
-                                        <SlotChip key={s.id} s={s} />
+                                        <SlotRow key={s.id} s={s} />
                                     ))}
                                 </button>
                             )}

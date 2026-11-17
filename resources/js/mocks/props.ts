@@ -198,7 +198,17 @@ const adminSlots: Builder = (s, sp): AdminSlotsProps => {
                         const v = slotView(x, s, 'monthly');
                         const usedTotal = v.used.monthly + v.used.trial;
                         const reservationCount = s.reservations.filter((r) => r.slotId === x.id && isActive(r)).length;
-                        return { ...v, usedTotal, fill: fillOf(usedTotal, x.capacity), reservationCount, canClose: reservationCount === 0 };
+                        const monthlyFull = x.monthlyLimit !== null && v.used.monthly >= x.monthlyLimit;
+                        const free = Math.max(0, x.capacity - usedTotal);
+                        return {
+                            ...v,
+                            usedTotal,
+                            fill: fillOf(usedTotal, x.capacity),
+                            trialOnlyFree: x.status === 'open' && x.trialOpen && monthlyFull ? free : 0,
+                            mark: x.status === 'closed' ? null : free === 0 ? 'full' : monthlyFull ? 'monthlyFull' : null,
+                            reservationCount,
+                            canClose: reservationCount === 0,
+                        };
                     });
                 return { ...calendarDay(date, s.today), label: dayLabel(date), closed: slots.length > 0 && slots.every((x) => x.status === 'closed'), slots };
             }),
