@@ -38,7 +38,7 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 | shop_phone | string | 仮の値。森下様にいただく |
 | schedule_open_day | tinyint | 仮に 1。森下様に確認中 |
 | schedule_deadline_day | tinyint | 15 |
-| checkout_hold_minutes | smallint | 仮押さえの時間。Stripe Checkout の期限は最短 30 分なので 30 以上 |
+| checkout_hold_minutes | smallint | 仮押さえの時間。Stripe Checkout の期限は最短 30 分なので 30 以上。仮に 60（森下様に確認中） |
 
 ### slots
 | 列 | 型 | メモ |
@@ -77,7 +77,7 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 | 列 | 型 | メモ |
 |---|---|---|
 | id | bigint | |
-| code | string unique | 画面に出す予約番号【要決定：形式】 |
+| code | string unique | 画面に出す予約番号。`YYMM-` ＋ 見間違えにくい英数字6文字（例 `2612-K7Q3M9`）。番号だけでは個人情報を見られないようにする（下の「予約番号と個人情報」） |
 | slot_id | fk | |
 | kind | enum(trial, monthly) | |
 | channel | enum(web, phone, dm, walkin, member, staff) | |
@@ -113,7 +113,7 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 
 - 使っている席 = その枠の予約のうち、`confirmed` と「期限内の `pending`」（`expires_at > now`）の人数の合計。モックの `seatsUsed` に「期限内」を足したもの
 - 席を使う書き込み（Web 予約、スタッフの予約、月謝の提出・変更）はすべて、`DB::transaction` の中で枠を `lockForUpdate()` してから残席を数え直す。モックの `canBook` の確認を、ここでもう一度行う
-- 本番の DB【要決定】：MySQL か PostgreSQL をすすめる（行ロックが効く）。SQLite でもこの規模なら書き込みが順番に処理されるので壊れはしないが、同時に書くと待たされる
+- 本番の DB は **MySQL**。開発とテストは今の SQLite のまま進め、本番の準備（PR 5）で MySQL のコンテナと pdo_mysql を足す。マイグレーションは両方で動く書き方にする
 
 ## ドメイン（selectors の移植）
 
@@ -136,7 +136,6 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 |---|---|---|---|
 | GET /reserve ほか予約の流れ | reserve.* | Reserve\* | なし |
 | POST /reserve | reserve.store | ReserveController@store | なし |
-| GET /reserve/pay/{code} | reserve.pay | ReserveController@pay（埋め込みの決済画面） | なし |
 | POST /r/{token}/cancel | reserve.cancel.store | CancelController@store | なし（トークン） |
 | POST /stripe/webhook | stripe.webhook | StripeWebhookController | Stripe の署名（CSRF の対象外） |
 | GET /member ほか | member.* | Member\* | 生徒 |
@@ -166,14 +165,14 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 ## Stripe（体験の Web 予約）
 
 - ライブラリは `stripe/stripe-php`。Laravel Cashier は定期課金向けなので使わない
-- 決済画面の形【要決定】：**Embedded Checkout（自分のページに埋め込む）をすすめる**。サイトから離れずに払え、カード情報は Stripe が扱うので PCI の負担も同じ。FE には `@stripe/stripe-js` と `@stripe/react-stripe-js` を足し、`/reserve/pay/{code}` に埋め込む。ホスト型（Stripe のページへ移る）でも Checkout Session の作り方は同じで、違いは FE だけ
+- 決済画面は **ホスト型の Checkout（Stripe のページへ移る）**。いちばん軽く、FE に Stripe のライブラリも決済のページも要らない。Checkout Session の URL へ `Inertia::location()` で移るだけ。あとで埋め込み（Embedded Checkout）に変えても、Session の作り方は同じで、違いは FE だけ
 
 ### 流れ
 1. 確認画面の「支払う」→ `POST /reserve`
    - トランザクションで枠をロックし、残席を確かめる
    - `pending` の予約を作る（`expires_at = now + checkout_hold_minutes`）
    - Checkout Session を作る：金額＝単価×人数、`expires_at` を同じ期限に、`metadata.reservation_id`、冪等キー＝`checkout-{予約ID}`
-   - 決済画面（`/reserve/pay/{code}`）へ
+   - Checkout Session の URL へ移る（`Inertia::location()`）
 2. お客様が払う → Stripe が `checkout.session.completed` を webhook で送る
    - `stripe_events` に同じ ID があれば何もしない
    - 予約が `pending` なら `confirmed` にし、`payment_intent` を保存し、予約確認メールを送る
@@ -190,12 +189,12 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 
 ### FE に足すもの
 - `ReserveCompleteProps` に `paymentStatus: 'pending' | 'confirmed' | 'expired'` を足し、「確認中」「時間切れで席を戻しました」を出す
-- 決済画面 `reserve/pay`（埋め込みにする場合）
+- 決済から戻る URL（`success_url`）は署名付きにする（下の「予約番号と個人情報」）
 
 ## メール
 
 - Laravel の Mailable を、キュー（今の `QUEUE_CONNECTION=database`）で送る
-- 送信サービス【要決定】：Resend・Amazon SES・Postmark など。開発中は今の `MAIL_MAILER=log` のまま
+- 送信サービスは **Resend**（無料プランがあり、Laravel に送信の仕組みが最初からある）。開発中は今の `MAIL_MAILER=log` のまま。本番では送信元ドメインの DNS 設定が要る
 - 送るもの
   | メール | いつ | 中身 |
   |---|---|---|
@@ -208,10 +207,18 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 ## ログイン
 
 - **スタッフ**：スターターキットのログイン（メール＋パスワード）を使い、`role = staff` だけが `/admin` に入れる。新規登録の画面は閉じる
-- **生徒**【要決定】：
-  - 案A（すすめる）：**メールのリンクでログイン**（パスワードなし）。メールアドレスを入れると、署名付きの URL が届く。ログインしたままにする期間を長めにとる。40名の生徒さんにパスワードを覚えてもらわずに済む
-  - 案B：メール＋パスワード（スターターキットそのまま）
+- **生徒**：**メールのリンクでログイン**（パスワードなし）。40名の生徒さんにパスワードを覚えてもらわずに済む。パスワード方式も「パスワードを忘れた」のメールで入れるので、強さは同じ
+  - リンクは1回だけ使え、15分で切れる（トークンはハッシュで保存）
+  - リンクを開いただけではログインしない。開いた画面の「ログインする」ボタン（POST）でログインする（メールのウイルスチェックがリンクを先に開いても使われないように）
+  - 送信は、同じメールアドレス・同じ IP から回数を制限する。登録されていないメールアドレスでも同じ表示にする（生徒かどうかを当てられないように）
+  - ログインしたままにする期間を長めにとる（remember）
 - 生徒の画面は、ログインしている生徒の `members.id` で絞る（モックの `currentMemberId` に当たる）
+
+## 予約番号と個人情報
+
+- 予約番号は推測されにくい形（年月＋ランダム6文字）にするが、**番号だけで個人情報を見られる作りにはしない**
+- 完了画面（`/reserve/complete/{code}`）は、決済から戻るときの署名付き URL（有効期限つき）でだけ開ける。期限が切れたら「予約確認メールをご覧ください」とだけ出す
+- キャンセルは、番号ではなく別のトークン（メールのリンク）で行う
 
 ## スケジューラー
 
@@ -236,18 +243,19 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 
 ## 決めること
 
-### 作り始める前に（私たちで決める）
-1. 生徒のログイン方法（案A：メールのリンク／案B：パスワード）
-2. Stripe の決済画面（埋め込み／ホスト型）
-3. メールの送信サービス
-4. 本番のサーバーと DB
-5. 予約番号の形式（例：`T2612-0042` ＝体験・26年12月・連番）
-6. 仮押さえの時間（30分以上）
+### 決めたこと（11/17）
+1. 生徒のログイン：メールのリンク
+2. Stripe：ホスト型の Checkout（あとで埋め込みに変えられる）
+3. メール：Resend
+4. 本番の DB：MySQL（開発・テストは SQLite）
+5. 予約番号：`YYMM-` ＋ ランダム6文字。番号だけでは個人情報を見られない
+6. 仮押さえの時間：仮に 60 分（settings で変えられる。森下様に確認）
 
 ### 森下様に聞く（mock-design.md の「まだ確認が必要」の続き）
 - Q1 お店の都合でキャンセルしたときは全額返金にするか → スタッフのキャンセルに「全額返金」の選択を足すか決まる（PR 2 より前に）
 - Q2 お休みの枠から移ってもらった生徒の変更回数を数えるか → 今の作りは「数えない」
 - Q3 日程の受付開始日、お店の電話番号
+- 仮押さえの時間（払わずに離れた人の席がふさがる時間。6席の枠なので短めがよいかも）
 - Web 予約が入ったとき、お店に通知メールが要るか
 - 料金・締め日などを、お店が自分で変えられる画面が要るか（今は settings を直接変える）
 - 出欠（来た／来なかった）を記録するか（status には attended・no_show を用意してある）
