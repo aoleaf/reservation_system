@@ -36,6 +36,8 @@ export default function DemoBar({ page }: { page: string }) {
     const setRole = useMockStore((s) => s.setRole);
     const setToday = useMockStore((s) => s.setToday);
     const reset = useMockStore((s) => s.reset);
+    // 本番では予約確認メールに入るキャンセル用リンク。モックではここから開く
+    const latestToken = useMockStore((s) => [...s.reservations].reverse().find((r) => r.channel === 'web' && r.cancelToken && r.cancelToken !== 'demo')?.cancelToken);
 
     if (!open) {
         return (
@@ -85,6 +87,17 @@ export default function DemoBar({ page }: { page: string }) {
                             {r.label}
                         </button>
                     ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-1">
+                    <span className="mr-1 opacity-70">メールのリンク</span>
+                    <button type="button" className={chip(false)} onClick={() => router.visit(route('reserve.cancel', 'demo'))}>
+                        デモ予約（11/22）
+                    </button>
+                    {latestToken && (
+                        <button type="button" className={chip(false)} onClick={() => router.visit(route('reserve.cancel', latestToken))}>
+                            最新のWeb予約
+                        </button>
+                    )}
                 </div>
                 <div className="flex flex-wrap items-center gap-1">
                     <span className="mr-1 opacity-70">今日の日付</span>

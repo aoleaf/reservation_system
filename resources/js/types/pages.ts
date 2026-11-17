@@ -22,7 +22,22 @@ export type PartyOption = { n: number; amount: number };
 
 // ---- お客様 ----
 
-export type ReserveIndexProps = { days: DayView[]; unitPrice: number; note: string };
+/** 空き状況の記号：ok=○ 空きあり / few=△ 残りわずか / full=× 満席 / none=受付なし（平日・過去・お休み） */
+export type AvailabilityMark = 'ok' | 'few' | 'full' | 'none';
+
+export type ReserveIndexProps = {
+    unitPrice: number;
+    note: string;
+    month: string;
+    monthLabel: string;
+    /** 前後の月へ移れないときは null */
+    prevMonth: string | null;
+    nextMonth: string | null;
+    leadingBlanks: number;
+    days: (CalendarDay & { label: string; mark: AvailabilityMark; slots: SlotView[] })[];
+    /** 最初に選んでおく日（○△ の最初の日） */
+    initialDate: ISODate | null;
+};
 
 export type ReserveFormProps = {
     slot: SlotView | null;
@@ -42,12 +57,17 @@ export type ReserveConfirmProps = {
     unitPrice: number;
     amount: number;
     cancelPolicy: string[];
+    cancelGuide: string;
+    /** 連絡先が足りないとき（URL を直接いじられたときなど）の説明。null なら支払える */
+    contactError: string | null;
 };
 
 export type ReserveCompleteProps = {
-    reservation: { id: string; partySize: number; amount: number; contact: Contact; cancelToken: string | null } | null;
+    reservation: { id: string; partySize: number; amount: number; contact: Contact } | null;
     slotLabel: string;
     cancelPolicy: string[];
+    /** キャンセルの案内（リンクは確認メールで送るので、画面には出さない） */
+    cancelGuide: string;
 };
 
 export type ReserveCancelProps = {
@@ -59,6 +79,7 @@ export type ReserveCancelProps = {
     refund: number;
     refundReason: string;
     cancelPolicy: string[];
+    shopPhone: string;
 };
 
 // ---- スタッフ ----

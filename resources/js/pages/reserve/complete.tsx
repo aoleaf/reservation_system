@@ -5,7 +5,7 @@ import type { ReserveCompleteProps } from '@/types/pages';
 import { Link } from '@inertiajs/react';
 
 /** 予約の完了。予約番号とキャンセル用のリンク */
-export default function ReserveComplete({ reservation, slotLabel, cancelPolicy }: ReserveCompleteProps) {
+export default function ReserveComplete({ reservation, slotLabel, cancelPolicy, cancelGuide }: ReserveCompleteProps) {
     if (!reservation) {
         return (
             <MobileShell title="予約の確認">
@@ -20,6 +20,11 @@ export default function ReserveComplete({ reservation, slotLabel, cancelPolicy }
                 <p className="text-brand text-2xl font-bold tracking-wider">{reservation.id}</p>
                 <p className="text-ink-soft mt-1 text-xs">当日、受付でお伝えください</p>
             </div>
+            {reservation.contact.email && (
+                <p className="mb-4 text-sm">
+                    予約確認メールを <span className="font-bold break-all">{reservation.contact.email}</span> にお送りしました。
+                </p>
+            )}
             <dl className="border-line divide-line divide-y rounded-lg border bg-white text-sm">
                 {[
                     ['日時', slotLabel],
@@ -35,16 +40,12 @@ export default function ReserveComplete({ reservation, slotLabel, cancelPolicy }
             </dl>
             <section className="mt-5 text-sm">
                 <h2 className="mb-2 font-bold">キャンセルするときは</h2>
-                <ul className="text-ink-soft mb-2 list-disc space-y-1 pl-5">
+                <p className="mb-2">{cancelGuide}</p>
+                <ul className="text-ink-soft list-disc space-y-1 pl-5">
                     {cancelPolicy.map((p) => (
                         <li key={p}>{p}</li>
                     ))}
                 </ul>
-                {reservation.cancelToken && (
-                    <Link href={route('reserve.cancel', reservation.cancelToken)} className="text-brand underline">
-                        キャンセル用のページ
-                    </Link>
-                )}
             </section>
             <Link href={route('reserve.index')} className="border-brand text-brand mt-6 block rounded-lg border py-3 text-center font-bold">
                 枠の一覧へ戻る

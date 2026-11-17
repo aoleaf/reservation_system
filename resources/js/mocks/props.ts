@@ -2,7 +2,7 @@
 // 本番ではコントローラーがこの役目を引き継ぎ、types/pages.ts と同じ形の props を返す。
 // selectors を呼んでよいのはここと mocks/actions.ts だけ。
 import type { Channel, Reservation, ReservationKind, Settings, Slot } from '@/types/models';
-import type { AdminMemberShowProps, AdminMembersProps, AdminReservationNewProps, AdminSlotsProps, AdminTodayProps, PaymentKind, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
+import type { AvailabilityMark, AdminMemberShowProps, AdminMembersProps, AdminReservationNewProps, AdminSlotsProps, AdminTodayProps, PaymentKind, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
 import { addDays, datesInMonth, dayLabel, isISODate, isMonth, isWeekendDate, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
 import type { MockData } from './seed';
 import { canBook, changeRemaining, isActive, memberSessions, refundAmount, remaining, seatsUsed } from './selectors';
@@ -45,6 +45,12 @@ export const cancelPolicyOf = (settings: Settings) => [
     '当日・無断のキャンセル：返金なし',
 ];
 
+export const cancelGuideOf = (settings: Settings) =>
+    `キャンセルは、予約確認メールに記載のキャンセル用リンクから、またはお電話（${settings.shopPhone}）で承ります。`;
+
+/** △（残りわずか）にする、その日の体験の残席の合計 */
+const FEW_SEATS = 3;
+
 /** 体験の予約を受け付ける最初の日（前日まで受付） */
 const firstTrialDate = (s: MockData) => addDays(s.today, 1);
 
@@ -57,17 +63,31 @@ function trialSlot(s: MockData, slotId: unknown): Slot | undefined {
 
 // ---- お客様：体験予約 ----
 
-const reserveIndex: Builder = (s): ReserveIndexProps => {
+const reserveIndex: Builder = (s, sp): ReserveIndexProps => {
     const from = firstTrialDate(s);
-    const dates = [...new Set(s.slots.filter((x) => x.date >= from && isWeekendDate(x.date)).map((x) => x.date))].sort();
+    const firstMonth = monthOf(from);
+    const lastMonth = s.slots.length ? monthOf(s.slots[s.slots.length - 1].date) : firstMonth;
+    const wanted = isMonth(sp.month) ? sp.month : firstMonth;
+    const month = wanted < firstMonth ? firstMonth : wanted > lastMonth ? lastMonth : wanted;
+    const dates = datesInMonth(month);
+    const days = dates.map((date) => {
+        const raw = s.slots.filter((x) => x.date === date);
+        const open = date >= from && raw.some((x) => x.trialOpen && x.status !== 'closed');
+        const slots = open ? raw.map((x) => slotView(x, s, 'trial')) : [];
+        const rest = slots.reduce((sum, x) => sum + (x.bookable ? x.remaining : 0), 0);
+        const mark: AvailabilityMark = !open ? 'none' : rest === 0 ? 'full' : rest <= FEW_SEATS ? 'few' : 'ok';
+        return { ...calendarDay(date, s.today), label: dayLabel(date), mark, slots };
+    });
     return {
         unitPrice: s.settings.trialPrice,
         note: '体験レッスンは土曜・日曜のみ。ご予約は前日まで受け付けています。',
-        days: dates.map((date) => ({
-            date,
-            label: dayLabel(date),
-            slots: s.slots.filter((x) => x.date === date).map((x) => slotView(x, s, 'trial')),
-        })),
+        month,
+        monthLabel: monthLabel(month),
+        prevMonth: month > firstMonth ? shiftMonth(month, -1) : null,
+        nextMonth: month < lastMonth ? shiftMonth(month, 1) : null,
+        leadingBlanks: weekdayIndex(dates[0]),
+        days,
+        initialDate: days.find((d) => d.mark === 'ok' || d.mark === 'few')?.date ?? null,
     };
 };
 
@@ -91,14 +111,17 @@ const reserveForm: Builder = (s, sp): ReserveFormProps => {
 const reserveConfirm: Builder = (s, sp): ReserveConfirmProps => {
     const slot = trialSlot(s, sp.slotId);
     const partySize = toPartySize(sp.n);
+    const contact = { name: str(sp.name), phone: str(sp.phone), email: str(sp.email) };
     return {
         slot: slot ? slotView(slot, s, 'trial') : null,
         slotLabel: slotLabelOf(slot),
         partySize,
-        contact: { name: str(sp.name), phone: str(sp.phone), email: str(sp.email) },
+        contact,
         unitPrice: s.settings.trialPrice,
         amount: s.settings.trialPrice * partySize,
         cancelPolicy: cancelPolicyOf(s.settings),
+        cancelGuide: cancelGuideOf(s.settings),
+        contactError: contact.name.trim() && contact.phone.trim() && contact.email.trim() ? null : 'お名前・電話番号・メールアドレスを入力してください',
     };
 };
 
@@ -108,10 +131,11 @@ const reserveComplete: Builder = (s, sp): ReserveCompleteProps => {
     return {
         reservation:
             r && slot
-                ? { id: r.id, partySize: r.partySize, amount: r.amount, contact: r.contact ?? { name: '', phone: '' }, cancelToken: r.cancelToken ?? null }
+                ? { id: r.id, partySize: r.partySize, amount: r.amount, contact: r.contact ?? { name: '', phone: '' } }
                 : null,
         slotLabel: slotLabelOf(slot),
         cancelPolicy: cancelPolicyOf(s.settings),
+        cancelGuide: cancelGuideOf(s.settings),
     };
 };
 
@@ -144,6 +168,7 @@ const reserveCancel: Builder = (s, sp): ReserveCancelProps => {
         refund,
         refundReason,
         cancelPolicy: cancelPolicyOf(s.settings),
+        shopPhone: s.settings.shopPhone,
     };
 };
 
