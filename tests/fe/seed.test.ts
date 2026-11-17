@@ -1,6 +1,6 @@
 import { isWeekendDate } from '@/mocks/dates';
 import { createSeed, slotIdOf } from '@/mocks/seed';
-import { memberSessions, remaining, seatsUsed } from '@/mocks/selectors';
+import { memberSessions, remaining, scheduleWindow, seatsUsed } from '@/mocks/selectors';
 import { describe, expect, it } from 'vitest';
 
 const seed = createSeed();
@@ -80,5 +80,20 @@ describe('seed', () => {
         for (const d of ['2026-11-04', '2026-11-10', '2026-11-17', '2026-11-26', '2026-12-02', '2026-12-08', '2026-12-16', '2026-12-24']) {
             expect(slots.filter((s) => s.date === d && s.status === 'closed')).toHaveLength(3);
         }
+    });
+});
+
+describe('scheduleWindow（来月の日程の受付期間）', () => {
+    const settings = createSeed().settings;
+    it.each([
+        ['2026-10-31', 'before'],
+        ['2026-11-01', 'open'],
+        ['2026-11-15', 'open'],
+        ['2026-11-16', 'closed'],
+    ])('12月分：今日 %s → %s', (today, state) => {
+        expect(scheduleWindow('2026-12', settings, today).state).toBe(state);
+    });
+    it('1月分は12月が前月（年をまたぐ）', () => {
+        expect(scheduleWindow('2027-01', settings, '2026-12-15')).toEqual({ opens: '2026-12-01', closes: '2026-12-15', state: 'open' });
     });
 });

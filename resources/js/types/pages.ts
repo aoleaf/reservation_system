@@ -135,8 +135,10 @@ export type MemberIndexProps = {
         submitted: boolean;
         sessions: MemberSessionView[];
         changeRemaining: number;
-        /** 未提出で、選びに行ける月なら true */
+        /** 未提出で、受付期間中なら true */
         canSchedule: boolean;
+        /** 受付期間の案内（締切、受付前、締め切り後の連絡先など） */
+        scheduleNote: string | null;
     }[];
     sessionsPerMonth: number;
 };

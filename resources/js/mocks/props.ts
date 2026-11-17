@@ -5,7 +5,7 @@ import type { Channel, Reservation, ReservationKind, Settings, Slot } from '@/ty
 import type { AvailabilityMark, AdminMemberShowProps, AdminMembersProps, AdminReservationNewProps, AdminSlotsProps, AdminTodayProps, PaymentKind, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
 import { addDays, datesInMonth, dayLabel, isISODate, isMonth, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
 import type { MockData } from './seed';
-import { canBook, changeRemaining, isActive, memberSessions, refundAmount, remaining, seatsUsed } from './selectors';
+import { canBook, changeRemaining, isActive, memberSessions, refundAmount, remaining, scheduleWindow, seatsUsed } from './selectors';
 
 export type ServerProps = Record<string, unknown>;
 export type Builder = (state: MockData, serverProps: ServerProps) => object;
@@ -215,6 +215,14 @@ function pickDays(s: MockData, month: string, ok: (slot: Slot) => boolean): Pick
     });
 }
 
+/** 来月の日程の受付期間の案内 */
+function scheduleNoteOf(s: MockData, month: string): string | null {
+    const w = scheduleWindow(month, s.settings, s.today);
+    if (w.state === 'before') return `${dayLabel(w.opens)}から選べます（締切 ${dayLabel(w.closes)}）`;
+    if (w.state === 'open') return `締切：${dayLabel(w.closes)}`;
+    return `受付は${dayLabel(w.closes)}で締め切りました。お店（${s.settings.shopPhone}）にご連絡ください`;
+}
+
 const memberIndex: Builder = (s): MemberIndexProps => {
     const member = s.members.find((m) => m.id === s.currentMemberId);
     const thisMonth = monthOf(s.today);
@@ -232,7 +240,8 @@ const memberIndex: Builder = (s): MemberIndexProps => {
                       label: `${i === 0 ? '今月' : '来月'}（${monthLabel(month)}）`,
                       submitted: Boolean(mm?.submittedAt),
                       changeRemaining: rest,
-                      canSchedule: !mm?.submittedAt && i === 1 && hasSlots(s, month),
+                      canSchedule: !mm?.submittedAt && i === 1 && hasSlots(s, month) && scheduleWindow(month, s.settings, s.today).state === 'open',
+                      scheduleNote: !mm?.submittedAt && i === 1 && hasSlots(s, month) ? scheduleNoteOf(s, month) : null,
                       sessions: memberSessions(member.id, month, s.reservations, s.slots).map(({ reservation, slot }) => ({
                           reservationId: reservation.id,
                           date: slot.date,
@@ -251,6 +260,7 @@ const memberSchedule: Builder = (s, sp): MemberScheduleProps => {
     let unavailable: string | null = null;
     if (!hasSlots(s, month)) unavailable = 'この月はまだ日程を選べません';
     else if (mm?.submittedAt) unavailable = 'この月の日程はもう提出済みです';
+    else if (scheduleWindow(month, s.settings, s.today).state !== 'open') unavailable = scheduleNoteOf(s, month);
     const dates = datesInMonth(month);
     return {
         month,

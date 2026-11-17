@@ -34,27 +34,29 @@ export default function MemberIndex({ member, months, sessionsPerMonth }: Member
                                         <span className="min-w-0 flex-1">{x.label}</span>
                                         {x.past ? (
                                             <span className="text-xs">済</span>
-                                        ) : x.canChange ? (
-                                            <Link href={route('member.change', x.reservationId)} className="border-brand text-brand shrink-0 rounded-md border px-2 py-1 text-xs font-bold">
-                                                変更
-                                            </Link>
                                         ) : (
-                                            <button type="button" disabled className="border-line text-ink-soft/60 shrink-0 rounded-md border px-2 py-1 text-xs">
-                                                変更
-                                            </button>
+                                            x.canChange && (
+                                                <Link href={route('member.change', x.reservationId)} className="border-brand text-brand shrink-0 rounded-md border px-2 py-1 text-xs font-bold">
+                                                    変更
+                                                </Link>
+                                            )
                                         )}
                                     </li>
                                 ))}
                             </ol>
                         )}
-                        {!m.submitted &&
-                            (m.canSchedule ? (
-                                <Link href={route('member.schedule', m.month)} className="bg-brand block rounded-lg py-3 text-center font-bold text-white">
-                                    来月の日程を選ぶ（{sessionsPerMonth}回）
-                                </Link>
-                            ) : (
-                                <p className="text-ink-soft text-sm">まだ日程は選べません。</p>
-                            ))}
+                        {!m.submitted && (
+                            <>
+                                {m.canSchedule && (
+                                    <Link href={route('member.schedule', m.month)} className="bg-brand block rounded-lg py-3 text-center font-bold text-white">
+                                        来月の日程を選ぶ（{sessionsPerMonth}回）
+                                    </Link>
+                                )}
+                                <p className={'mt-2 text-sm ' + (m.canSchedule ? 'text-ink-soft text-center' : 'text-alert font-bold')}>
+                                    {m.scheduleNote ?? 'まだ日程は選べません。'}
+                                </p>
+                            </>
+                        )}
                     </section>
                 ))}
             </div>
