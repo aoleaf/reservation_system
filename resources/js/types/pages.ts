@@ -149,7 +149,12 @@ export type AdminSlotsProps = {
         leadingBlanks: number;
         days: (CalendarDay & { label: string; closed: boolean; slots: AdminSlotCell[] })[];
     }[];
-    initialDate: ISODate;
+    /** 選んでいる日（?date=）。パネルに出す。選んでいなければ null */
+    selected: {
+        date: ISODate;
+        label: string;
+        slots: (AdminSlotCell & { entries: AdminEntry[] })[];
+    } | null;
 };
 
 // ---- 生徒さん ----

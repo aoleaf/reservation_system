@@ -183,6 +183,24 @@ const fillOf = (used: number, capacity: number): AdminSlotCell['fill'] => {
     return Math.min(3, Math.ceil((used / capacity) * 3)) as 1 | 2 | 3;
 };
 
+/** カレンダーの1枠（帯の内訳・印・お休みにできるか） */
+function adminSlotCell(s: MockData, x: Slot): AdminSlotCell {
+    const v = slotView(x, s, 'monthly');
+    const usedTotal = v.used.monthly + v.used.trial;
+    const reservationCount = s.reservations.filter((r) => r.slotId === x.id && isActive(r)).length;
+    const monthlyFull = x.monthlyLimit !== null && v.used.monthly >= x.monthlyLimit;
+    const free = Math.max(0, x.capacity - usedTotal);
+    return {
+        ...v,
+        usedTotal,
+        fill: fillOf(usedTotal, x.capacity),
+        trialOnlyFree: x.status === 'open' && x.trialOpen && monthlyFull ? free : 0,
+        mark: x.status === 'closed' ? null : free === 0 ? 'full' : monthlyFull ? 'monthlyFull' : null,
+        reservationCount,
+        canClose: reservationCount === 0,
+    };
+}
+
 const adminSlots: Builder = (s, sp): AdminSlotsProps => {
     const month = isMonth(sp.month) ? sp.month : monthOf(s.today);
     const months = [month, shiftMonth(month, 1)].map((m) => {
@@ -192,34 +210,19 @@ const adminSlots: Builder = (s, sp): AdminSlotsProps => {
             label: monthLabel(m),
             leadingBlanks: weekdayIndex(dates[0]),
             days: dates.map((date) => {
-                const slots = s.slots
-                    .filter((x) => x.date === date)
-                    .map((x): AdminSlotCell => {
-                        const v = slotView(x, s, 'monthly');
-                        const usedTotal = v.used.monthly + v.used.trial;
-                        const reservationCount = s.reservations.filter((r) => r.slotId === x.id && isActive(r)).length;
-                        const monthlyFull = x.monthlyLimit !== null && v.used.monthly >= x.monthlyLimit;
-                        const free = Math.max(0, x.capacity - usedTotal);
-                        return {
-                            ...v,
-                            usedTotal,
-                            fill: fillOf(usedTotal, x.capacity),
-                            trialOnlyFree: x.status === 'open' && x.trialOpen && monthlyFull ? free : 0,
-                            mark: x.status === 'closed' ? null : free === 0 ? 'full' : monthlyFull ? 'monthlyFull' : null,
-                            reservationCount,
-                            canClose: reservationCount === 0,
-                        };
-                    });
+                const slots = s.slots.filter((x) => x.date === date).map((x) => adminSlotCell(s, x));
                 return { ...calendarDay(date, s.today), label: dayLabel(date), closed: slots.length > 0 && slots.every((x) => x.status === 'closed'), slots };
             }),
         };
     });
+    const date = isISODate(sp.date) ? sp.date : null;
+    const daySlots = date ? s.slots.filter((x) => x.date === date) : [];
     return {
         month,
         prevMonth: shiftMonth(month, -1),
         nextMonth: shiftMonth(month, 1),
         months,
-        initialDate: monthOf(s.today) === month ? s.today : `${month}-01`,
+        selected: date ? { date, label: dayLabel(date), slots: daySlots.map((x) => ({ ...adminSlotCell(s, x), entries: entriesOf(s, x) })) } : null,
     };
 };
 
