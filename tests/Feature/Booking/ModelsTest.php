@@ -40,6 +40,13 @@ class ModelsTest extends TestCase
         $this->assertSame(SlotStatus::Open, $slot->status);
     }
 
+    public function test_枠の日付は_YYYY_MM_DD_で保存し_その形で探せる(): void
+    {
+        Slot::factory()->create(['date' => '2026-12-02']);
+        $this->assertSame('2026-12-02', \DB::table('slots')->value('date')); // DB の中身をそのまま見る
+        $this->assertTrue(Slot::query()->where('date', '2026-12-02')->exists());
+    }
+
     public function test_席を使っている予約は_confirmed_と期限内の_pending_だけ(): void
     {
         $now = CarbonImmutable::parse('2026-11-20 12:00');

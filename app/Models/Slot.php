@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\SlotStatus;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -28,12 +29,23 @@ class Slot extends Model
     protected function casts(): array
     {
         return [
-            'date' => 'immutable_date',
             'capacity' => 'integer',
             'trial_open' => 'boolean',
             'monthly_limit' => 'integer',
             'status' => SlotStatus::class,
         ];
+    }
+
+    /**
+     * 日付は DB に 'YYYY-MM-DD' だけで入れる（Laravel の date キャストは SQLite に時刻まで入れるため、
+     * 'YYYY-MM-DD' で探すと見つからない）。読むときは CarbonImmutable にする。
+     */
+    protected function date(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $v) => $v === null ? null : CarbonImmutable::parse($v)->startOfDay(),
+            set: fn ($v) => $v === null ? null : CarbonImmutable::parse($v)->format('Y-m-d'),
+        );
     }
 
     public function reservations(): HasMany
