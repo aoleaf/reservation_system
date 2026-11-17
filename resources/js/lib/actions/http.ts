@@ -11,4 +11,5 @@ export const httpActions: Actions = {
     changeMonthlySession: (input, cb) => router.post(`/member/change/${input.reservationId}`, { toSlotId: input.toSlotId }, opts(cb)),
     setSlotStatus: (input, cb) => router.patch(`/admin/slots/${input.slotId}`, { status: input.status }, opts(cb)),
     cancelByToken: (input, cb) => router.post(`/r/${input.token}/cancel`, {}, opts(cb)),
+    cancelByStaff: (input, cb) => router.post(`/admin/reservations/${input.reservationId}/cancel`, {}, opts(cb)),
 };

@@ -15,6 +15,8 @@ export type SubmitMonthlyScheduleInput = { month: string; slotIds: SlotId[] };
 export type ChangeMonthlySessionInput = { reservationId: string; toSlotId: SlotId };
 export type SetSlotStatusInput = { slotId: SlotId; status: SlotStatus };
 export type CancelByTokenInput = { token: string };
+/** スタッフのキャンセル入力（電話でのキャンセル、お店都合でお願いしたとき） */
+export type CancelByStaffInput = { reservationId: string };
 
 export type Actions = {
     createWebReservation: (input: CreateWebReservationInput, cb?: Callbacks) => void;
@@ -23,4 +25,5 @@ export type Actions = {
     changeMonthlySession: (input: ChangeMonthlySessionInput, cb?: Callbacks) => void;
     setSlotStatus: (input: SetSlotStatusInput, cb?: Callbacks) => void;
     cancelByToken: (input: CancelByTokenInput, cb?: Callbacks) => void;
+    cancelByStaff: (input: CancelByStaffInput, cb?: Callbacks) => void;
 };
