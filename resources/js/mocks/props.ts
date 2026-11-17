@@ -3,7 +3,7 @@
 // selectors を呼んでよいのはここと mocks/actions.ts だけ。
 import type { Channel, Reservation, ReservationKind, Settings, Slot } from '@/types/models';
 import type { AvailabilityMark, AdminMemberShowProps, AdminMembersProps, AdminReservationNewProps, AdminSlotsProps, AdminTodayProps, PaymentKind, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
-import { addDays, datesInMonth, dayLabel, isISODate, isMonth, isWeekendDate, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
+import { addDays, datesInMonth, dayLabel, isISODate, isMonth, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
 import type { MockData } from './seed';
 import { canBook, changeRemaining, isActive, memberSessions, refundAmount, remaining, seatsUsed } from './selectors';
 
