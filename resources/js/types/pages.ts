@@ -154,6 +154,8 @@ export type AdminSlotsProps = {
         date: ISODate;
         label: string;
         slots: (AdminSlotCell & { entries: AdminEntry[] })[];
+        /** 1日まとめての操作。営業の枠があれば pause、受付停止だけなら resume、どちらもなければ null */
+        dayAction: 'pause' | 'resume' | null;
     } | null;
 };
 

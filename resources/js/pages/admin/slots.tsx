@@ -3,7 +3,7 @@ import MonthCalendar from '@/components/month-calendar';
 import ReservationEntries from '@/components/reservation-entries';
 import SlotBar from '@/components/slot-bar';
 import StatusBadge from '@/components/status-badge';
-import { setSlotStatus } from '@/lib/actions';
+import { setDayStatus, setSlotStatus } from '@/lib/actions';
 import type { SlotStatus } from '@/types/models';
 import type { AdminEntry, AdminSlotCell, AdminSlotsProps } from '@/types/pages';
 import { Link } from '@inertiajs/react';
@@ -236,6 +236,20 @@ export default function AdminSlots({ month, prevMonth, nextMonth, months, select
                                     <X className="h-4 w-4" />
                                 </Link>
                             </div>
+                            {selected.dayAction && (
+                                <button
+                                    type="button"
+                                    onClick={() => setDayStatus({ date: selected.date, status: selected.dayAction === 'pause' ? 'paused' : 'open' })}
+                                    className={
+                                        'mt-3 w-full rounded-md border py-2 text-sm font-bold ' +
+                                        (selected.dayAction === 'pause'
+                                            ? 'border-onsite text-onsite bg-onsite-soft'
+                                            : 'border-brand text-brand bg-white')
+                                    }
+                                >
+                                    {selected.dayAction === 'pause' ? 'この日をまとめて受付停止' : 'この日の受付をまとめて再開'}
+                                </button>
+                            )}
                             <Link href={route('admin.today', { date: selected.date })} className="text-brand mt-3 inline-block text-sm underline">
                                 この日の予約一覧を開く
                             </Link>

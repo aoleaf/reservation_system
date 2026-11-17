@@ -222,7 +222,14 @@ const adminSlots: Builder = (s, sp): AdminSlotsProps => {
         prevMonth: shiftMonth(month, -1),
         nextMonth: shiftMonth(month, 1),
         months,
-        selected: date ? { date, label: dayLabel(date), slots: daySlots.map((x) => ({ ...adminSlotCell(s, x), entries: entriesOf(s, x) })) } : null,
+        selected: date
+            ? {
+                  date,
+                  label: dayLabel(date),
+                  slots: daySlots.map((x) => ({ ...adminSlotCell(s, x), entries: entriesOf(s, x) })),
+                  dayAction: daySlots.some((x) => x.status === 'open') ? 'pause' : daySlots.some((x) => x.status === 'paused') ? 'resume' : null,
+              }
+            : null,
     };
 };
 
