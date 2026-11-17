@@ -7,7 +7,7 @@ import type { SlotStatus } from '@/types/models';
 import type { AdminSlotCell, AdminSlotsProps } from '@/types/pages';
 import { Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 const STATUS_OPTIONS: { value: SlotStatus; label: string }[] = [
     { value: 'open', label: '営業' },
@@ -60,6 +60,12 @@ function SlotChip({ s }: { s: AdminSlotCell }) {
 /** スタッフのカレンダー。常に2か月分。日を選ぶと、枠ごとの内訳と状態（営業・受付停止・お休み）の切替が出る */
 export default function AdminSlots({ prevMonth, nextMonth, months, initialDate }: AdminSlotsProps) {
     const [selected, setSelected] = useState(initialDate);
+    const detailRef = useRef<HTMLElement>(null);
+    // 日を選んだら、その日の内訳までスクロールする（スマホではカレンダーの下にあって見えないため）
+    const select = (date: string) => {
+        setSelected(date);
+        requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    };
     const [error, setError] = useState<{ slotId: string; message: string } | null>(null);
     const day = months.flatMap((m) => m.days).find((d) => d.date === selected);
 
@@ -108,7 +114,7 @@ export default function AdminSlots({ prevMonth, nextMonth, months, initialDate }
                             renderDay={(d) => (
                                 <button
                                     type="button"
-                                    onClick={() => setSelected(d.date)}
+                                    onClick={() => select(d.date)}
                                     aria-label={d.label}
                                     aria-pressed={d.date === selected}
                                     className={
@@ -136,7 +142,7 @@ export default function AdminSlots({ prevMonth, nextMonth, months, initialDate }
             </div>
 
             {day && (
-                <section className="mt-8">
+                <section ref={detailRef} className="mt-8 scroll-mt-20">
                     <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
                         <h3 className="text-lg font-bold">{day.label}</h3>
                         <Link href={route('admin.today', { date: day.date })} className="text-brand text-sm underline">
