@@ -3,7 +3,7 @@
 import type { Actions, Callbacks } from '@/lib/actions/types';
 import { router } from '@inertiajs/react';
 import { addDays, monthOf } from './dates';
-import { canBook, changeRemaining, isActive, memberSessions, refundAmount, scheduleWindow, seatsUsed } from './selectors';
+import { canBook, changeRemaining, isActive, isPrepaid, memberSessions, refundAmount, scheduleWindow, seatsUsed } from './selectors';
 import { useMockStore } from './store';
 
 const FULL = '満席になりました。別の枠をお選びください';
@@ -133,6 +133,18 @@ export const mockActions: Actions = {
             return fail(cb, { slotId: '予約が入っている枠はお休みにできません。受付停止にして、キャンセルを入力してからお休みにしてください' });
         }
         s.setSlotStatus(slotId, status);
+        cb?.onFinish?.();
+    },
+
+    cancelByStaff({ reservationId }, cb) {
+        const s = st();
+        const r = s.reservations.find((x) => x.id === reservationId);
+        const slot = r && s.slots.find((x) => x.id === r.slotId);
+        if (!r || !slot) return fail(cb, { reservationId: '予約が見つかりません' });
+        if (!isActive(r)) return fail(cb, { reservationId: 'この予約はキャンセル済みです' });
+        // 返金はお客様のキャンセルと同じ計算。支払済（Web の体験）だけが対象
+        const refunded = isPrepaid(r) ? refundAmount(r.amount, slot.date, s.today, s.settings.stripeRate) : 0;
+        s.updateReservation(r.id, { status: 'canceled', refundedAmount: refunded });
         cb?.onFinish?.();
     },
 

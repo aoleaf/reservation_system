@@ -100,7 +100,19 @@ export type AdminTodayProps = {
         slot: SlotView;
         /** この枠に予約を入れるリンク（体験が入れば体験、平日など体験が無理なら月謝。どちらも無理なら null） */
         add: { kind: ReservationKind; remaining: number } | null;
-        entries: { id: string; name: string; kind: ReservationKind; partySize: number; payment: PaymentKind; channel: Channel; channelLabel: string }[];
+        entries: {
+            id: string;
+            name: string;
+            /** 連絡用の電話番号 */
+            phone: string | null;
+            kind: ReservationKind;
+            partySize: number;
+            payment: PaymentKind;
+            channel: Channel;
+            channelLabel: string;
+            /** 今キャンセルしたときの返金額と説明 */
+            cancel: { refund: number; note: string };
+        }[];
     }[];
 };
 

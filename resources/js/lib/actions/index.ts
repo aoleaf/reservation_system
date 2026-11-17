@@ -8,4 +8,4 @@ export type * from './types';
 
 const actions: Actions = import.meta.env.VITE_MOCK === 'true' ? mockActions : httpActions;
 
-export const { createWebReservation, createStaffReservation, submitMonthlySchedule, changeMonthlySession, setSlotStatus, cancelByToken } = actions;
+export const { createWebReservation, createStaffReservation, submitMonthlySchedule, changeMonthlySession, setSlotStatus, cancelByToken, cancelByStaff } = actions;

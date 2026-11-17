@@ -3,6 +3,9 @@
 import { addMonths, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import type { ISODate, MemberMonth, Reservation, ReservationKind, Settings, Slot } from '@/types/models';
 
+/** 先に支払い済みの予約か（Web で予約した体験）。返金の対象になる */
+export const isPrepaid = (r: Reservation) => r.kind === 'trial' && r.channel === 'web';
+
 /** 席を占有している予約か（pending / confirmed） */
 export const isActive = (r: Reservation) => r.status === 'pending' || r.status === 'confirmed';
 

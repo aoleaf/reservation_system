@@ -5,7 +5,7 @@ import type { Channel, Reservation, ReservationKind, Settings, Slot } from '@/ty
 import type { AvailabilityMark, AdminMemberShowProps, AdminSlotCell, AdminMembersProps, AdminReservationNewProps, AdminSlotsProps, AdminTodayProps, PaymentKind, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
 import { addDays, datesInMonth, dayLabel, isISODate, isMonth, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
 import type { MockData } from './seed';
-import { canBook, changeRemaining, isActive, memberSessions, refundAmount, remaining, scheduleWindow, seatsUsed } from './selectors';
+import { canBook, changeRemaining, isActive, isPrepaid, memberSessions, refundAmount, remaining, scheduleWindow, seatsUsed } from './selectors';
 
 export type ServerProps = Record<string, unknown>;
 export type Builder = (state: MockData, serverProps: ServerProps) => object;
@@ -320,13 +320,22 @@ const memberChange: Builder = (s, sp): MemberChangeProps => {
 const CHANNEL_LABEL: Record<Channel, string> = { web: 'Web', phone: '電話', dm: 'DM', walkin: '来店', member: '生徒', staff: 'スタッフ' };
 
 /** 支払いの色分け：月謝は monthly、体験の web は支払済、それ以外の体験は当日払い */
-const paymentOf = (r: Reservation): PaymentKind => (r.kind === 'monthly' ? 'monthly' : r.channel === 'web' ? 'paid' : 'onsite');
+const paymentOf = (r: Reservation): PaymentKind => (r.kind === 'monthly' ? 'monthly' : isPrepaid(r) ? 'paid' : 'onsite');
+
+/** スタッフがキャンセルしたときの返金額と説明（返金の計算はお客様のキャンセルと同じ） */
+function staffCancelOf(s: MockData, r: Reservation, slot: Slot): { refund: number; note: string } {
+    if (r.kind === 'monthly') return { refund: 0, note: '月謝の回をキャンセルします（返金はありません）。別の日に入れるときは、予約の入力から入れてください' };
+    if (!isPrepaid(r)) return { refund: 0, note: '当日払いのため、返金はありません' };
+    const refund = refundAmount(r.amount, slot.date, s.today, s.settings.stripeRate);
+    const when = slot.date >= addDays(s.today, 2) ? '2日前まで（決済手数料を引いて返金）' : slot.date === addDays(s.today, 1) ? '前日（50%を返金）' : '当日以降（返金なし）';
+    return { refund, note: `お支払い ${r.amount.toLocaleString('ja-JP')}円・${when}` };
+}
 
 const dateParam = (s: MockData, v: unknown) => (isISODate(v) ? v : s.today);
 
 const adminToday: Builder = (s, sp): AdminTodayProps => {
     const date = dateParam(s, sp.date);
-    const names = new Map(s.members.map((m) => [m.id, m.name]));
+    const members = new Map(s.members.map((m) => [m.id, m]));
     const raw = s.slots.filter((x) => x.date === date);
     return {
         date,
@@ -349,7 +358,9 @@ const adminToday: Builder = (s, sp): AdminTodayProps => {
                 .sort((a, b) => (a.kind === b.kind ? a.createdAt.localeCompare(b.createdAt) : a.kind === 'monthly' ? -1 : 1))
                 .map((r) => ({
                     id: r.id,
-                    name: (r.memberId ? names.get(r.memberId) : r.contact?.name) ?? '（名前なし）',
+                    name: (r.memberId ? members.get(r.memberId)?.name : r.contact?.name) ?? '（名前なし）',
+                    phone: (r.memberId ? members.get(r.memberId)?.phone : r.contact?.phone) || null,
+                    cancel: staffCancelOf(s, r, slot),
                     kind: r.kind,
                     partySize: r.partySize,
                     payment: paymentOf(r),

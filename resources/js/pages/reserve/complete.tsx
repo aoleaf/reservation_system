@@ -48,7 +48,7 @@ export default function ReserveComplete({ reservation, slotLabel, cancelPolicy, 
                 </ul>
             </section>
             <Link href={route('reserve.index')} className="border-brand text-brand mt-6 block rounded-lg border py-3 text-center font-bold">
-                枠の一覧へ戻る
+                予約のページへ戻る
             </Link>
         </MobileShell>
     );
