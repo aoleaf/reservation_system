@@ -1,5 +1,4 @@
-import AdminTabs from '@/components/admin-tabs';
-import MobileShell from '@/components/mobile-shell';
+import AdminShell from '@/components/admin-shell';
 import MonthCalendar from '@/components/month-calendar';
 import SeatMeter from '@/components/seat-meter';
 import StatusBadge from '@/components/status-badge';
@@ -28,13 +27,21 @@ export default function AdminSlots({ month, monthLabel, prevMonth, nextMonth, le
     };
 
     return (
-        <MobileShell title="カレンダー" variant="staff" footer={<AdminTabs current="slots" />}>
+        <AdminShell title="カレンダー" current="slots">
             <div className="mb-3 flex items-center justify-between">
-                <Link href={route('admin.slots', { month: prevMonth })} className="flex h-9 w-9 items-center justify-center rounded-full bg-white" aria-label="前の月">
+                <Link
+                    href={route('admin.slots', { month: prevMonth })}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white"
+                    aria-label="前の月"
+                >
                     <ChevronLeft className="h-5 w-5" />
                 </Link>
                 <h2 className="font-bold">{monthLabel}</h2>
-                <Link href={route('admin.slots', { month: nextMonth })} className="flex h-9 w-9 items-center justify-center rounded-full bg-white" aria-label="次の月">
+                <Link
+                    href={route('admin.slots', { month: nextMonth })}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white"
+                    aria-label="次の月"
+                >
                     <ChevronRight className="h-5 w-5" />
                 </Link>
             </div>
@@ -49,7 +56,7 @@ export default function AdminSlots({ month, monthLabel, prevMonth, nextMonth, le
                         onClick={() => setSelected(d.date)}
                         className={
                             'flex h-16 w-full flex-col items-center gap-0.5 rounded-md border pt-1 text-xs ' +
-                            (d.date === selected ? 'border-brand ring-brand bg-white ring-2 ' : 'border-line ') +
+                            (d.date === selected ? 'border-brand ring-brand bg-white ring-2' : 'border-line') +
                             (d.closed ? 'bg-line/70 text-ink-soft' : d.date === selected ? '' : 'bg-white')
                         }
                         aria-label={d.label}
@@ -86,14 +93,20 @@ export default function AdminSlots({ month, monthLabel, prevMonth, nextMonth, le
                                         {s.start}〜{s.end}
                                     </span>
                                     {s.status !== 'open' && <StatusBadge kind={s.status} />}
-                                    <div className="border-line ml-auto flex overflow-hidden rounded-md border text-xs" role="group" aria-label="枠の状態">
+                                    <div
+                                        className="border-line ml-auto flex overflow-hidden rounded-md border text-xs"
+                                        role="group"
+                                        aria-label="枠の状態"
+                                    >
                                         {STATUS_OPTIONS.map((o) => (
                                             <button
                                                 key={o.value}
                                                 type="button"
                                                 aria-pressed={s.status === o.value}
                                                 onClick={() => change(s.id, o.value)}
-                                                className={'px-2 py-1 ' + (s.status === o.value ? 'bg-brand font-bold text-white' : 'text-ink-soft bg-white')}
+                                                className={
+                                                    'px-2 py-1 ' + (s.status === o.value ? 'bg-brand font-bold text-white' : 'text-ink-soft bg-white')
+                                                }
                                             >
                                                 {o.label}
                                             </button>
@@ -113,6 +126,6 @@ export default function AdminSlots({ month, monthLabel, prevMonth, nextMonth, le
                     </ul>
                 </section>
             )}
-        </MobileShell>
+        </AdminShell>
     );
 }
