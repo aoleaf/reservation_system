@@ -1,6 +1,6 @@
 // 画面ごとの props 型。BE期のコントローラーの仕様書になる。
 // 残席・金額・「押せるか」は builder（本番ではコントローラー）が計算済みの値で渡す。画面では計算しない。
-import type { Channel, Contact, ISODate, ReservationKind, SlotId } from './models';
+import type { Channel, Contact, ISODate, ReservationKind, SlotId, SlotStatus } from './models';
 
 export type SlotView = {
     id: SlotId;
@@ -12,7 +12,7 @@ export type SlotView = {
     used: { monthly: number; trial: number }; // SeatMeter 用
     remaining: number; // その画面の kind での残席
     bookable: boolean; // その画面で押せるか
-    blocked: boolean;
+    status: SlotStatus;
 };
 
 export type DayView = { date: ISODate; label: string; slots: SlotView[] };
@@ -64,6 +64,9 @@ export type ReserveCancelProps = {
 // ---- スタッフ ----
 
 export type PaymentKind = 'paid' | 'onsite' | 'monthly';
+
+/** スタッフが入力するときの経路 */
+export type StaffChannel = 'phone' | 'dm' | 'walkin';
 
 export type AdminTodayProps = {
     date: ISODate;
@@ -155,7 +158,7 @@ export type AdminReservationNewProps = {
     dateOptions: { date: ISODate; label: string }[];
     slots: SlotView[];
     initialSlotId: SlotId | null;
-    channels: { value: 'phone' | 'dm'; label: string }[];
+    channels: { value: StaffChannel; label: string }[];
 };
 
 export type AdminMembersProps = {

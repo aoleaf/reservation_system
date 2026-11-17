@@ -25,8 +25,8 @@ export default function SlotCard({ slot, href, onClick, selected = false, showRe
                 <SeatMeter monthly={slot.used.monthly} trial={slot.used.trial} capacity={slot.capacity} />
             </div>
             <div className="shrink-0 text-right text-sm">
-                {slot.blocked ? (
-                    <StatusBadge kind="closed" />
+                {slot.status !== 'open' ? (
+                    <StatusBadge kind={slot.status} />
                 ) : !slot.bookable ? (
                     <StatusBadge kind="full" />
                 ) : showRemaining ? (

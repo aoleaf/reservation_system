@@ -9,6 +9,6 @@ export const httpActions: Actions = {
     createStaffReservation: (input, cb) => router.post('/admin/reservations', input, opts(cb)),
     submitMonthlySchedule: (input, cb) => router.post(`/member/schedule/${input.month}`, { slotIds: input.slotIds }, opts(cb)),
     changeMonthlySession: (input, cb) => router.post(`/member/change/${input.reservationId}`, { toSlotId: input.toSlotId }, opts(cb)),
-    setSlotBlocked: (input, cb) => router.patch(`/admin/slots/${input.slotId}`, { blocked: input.blocked }, opts(cb)),
+    setSlotStatus: (input, cb) => router.patch(`/admin/slots/${input.slotId}`, { status: input.status }, opts(cb)),
     cancelByToken: (input, cb) => router.post(`/r/${input.token}/cancel`, {}, opts(cb)),
 };

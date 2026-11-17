@@ -32,8 +32,8 @@ export function slotView(slot: Slot, s: MockData, kind: ReservationKind, extraOk
         capacity: slot.capacity,
         used: { monthly: seatsUsed(slot, s.reservations, 'monthly'), trial: seatsUsed(slot, s.reservations, 'trial') },
         remaining: rest,
-        bookable: !slot.blocked && rest > 0 && extraOk,
-        blocked: slot.blocked,
+        bookable: slot.status === 'open' && rest > 0 && extraOk,
+        status: slot.status,
     };
 }
 
@@ -156,7 +156,7 @@ const adminSlots: Builder = (s, sp): AdminSlotsProps => {
     const dates = datesInMonth(month);
     const days = dates.map((date) => {
         const slots = s.slots.filter((x) => x.date === date).map((x) => slotView(x, s, 'monthly'));
-        return { ...calendarDay(date, s.today), label: dayLabel(date), closed: slots.length > 0 && slots.every((x) => x.blocked), slots };
+        return { ...calendarDay(date, s.today), label: dayLabel(date), closed: slots.length > 0 && slots.every((x) => x.status === 'closed'), slots };
     });
     return {
         month,
@@ -183,7 +183,7 @@ function pickDays(s: MockData, month: string, ok: (slot: Slot) => boolean): Pick
         return {
             ...calendarDay(date, s.today),
             label: dayLabel(date),
-            closed: raw.length > 0 && raw.every((x) => x.blocked),
+            closed: raw.length > 0 && raw.every((x) => x.status === 'closed'),
             slots,
             selectable: slots.some((x) => x.bookable),
         };
@@ -263,7 +263,7 @@ const memberChange: Builder = (s, sp): MemberChangeProps => {
 
 // ---- スタッフ：今日の一覧・予約入力・生徒一覧 ----
 
-const CHANNEL_LABEL: Record<Channel, string> = { web: 'Web', phone: '電話', dm: 'DM', member: '生徒', staff: 'スタッフ' };
+const CHANNEL_LABEL: Record<Channel, string> = { web: 'Web', phone: '電話', dm: 'DM', walkin: '来店', member: '生徒', staff: 'スタッフ' };
 
 /** 支払いの色分け：月謝は monthly、体験の web は支払済、それ以外の体験は当日払い */
 const paymentOf = (r: Reservation): PaymentKind => (r.kind === 'monthly' ? 'monthly' : r.channel === 'web' ? 'paid' : 'onsite');
@@ -280,10 +280,10 @@ const adminToday: Builder = (s, sp): AdminTodayProps => {
         isToday: date === s.today,
         prevDate: addDays(date, -1),
         nextDate: addDays(date, 1),
-        closed: raw.length > 0 && raw.every((x) => x.blocked),
+        closed: raw.length > 0 && raw.every((x) => x.status === 'closed'),
         slots: raw.map((slot) => ({
             slot: slotView(slot, s, 'trial'),
-            add: slot.blocked
+            add: slot.status !== 'open'
                 ? null
                 : remaining(slot, s.reservations, 'trial') > 0
                   ? { kind: 'trial' as const, remaining: remaining(slot, s.reservations, 'trial') }
@@ -312,12 +312,12 @@ const adminReservationNew: Builder = (s, sp): AdminReservationNewProps => {
     const month = monthOf(date);
     const raw = s.slots.filter((x) => x.date === date);
     const slots = raw.map((x) => slotView(x, s, kind));
-    const dateOptions = [...new Set(s.slots.filter((x) => x.date >= s.today && !x.blocked && (kind === 'monthly' || x.trialOpen)).map((x) => x.date))]
+    const dateOptions = [...new Set(s.slots.filter((x) => x.date >= s.today && x.status !== 'closed' && (kind === 'monthly' || x.trialOpen)).map((x) => x.date))]
         .slice(0, kind === 'monthly' ? 21 : 12)
         .map((d) => ({ date: d, label: dayLabel(d) }));
     let dateNote: string | null = null;
     if (raw.length === 0) dateNote = 'この日は枠がありません';
-    else if (raw.every((x) => x.blocked)) dateNote = 'この日はお休みです';
+    else if (raw.every((x) => x.status === 'closed')) dateNote = 'この日はお休みです';
     else if (kind === 'trial' && !raw.some((x) => x.trialOpen)) dateNote = '体験レッスンは土曜・日曜だけです。上から日を選んでください';
     const wanted = slots.find((x) => x.id === str(sp.slotId) && x.bookable);
     const members =
@@ -342,6 +342,7 @@ const adminReservationNew: Builder = (s, sp): AdminReservationNewProps => {
         channels: [
             { value: 'phone', label: '電話' },
             { value: 'dm', label: 'DM' },
+            { value: 'walkin', label: '来店（口頭）' },
         ],
     };
 };
