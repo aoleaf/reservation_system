@@ -27,6 +27,8 @@
     --color-onsite-soft: #f8ead3;
     --color-alert: #b3261e;
     --color-alert-soft: #f9e1df;
+    /* 体験だけ受けられる空き（土日で月謝が上限に達した枠）の斜線 */
+    --color-hatch: #c9962e;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -173,4 +175,9 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/* 体験だけ受けられる空きの斜線（SlotBar で使う） */
+@utility bg-hatch {
+    background-image: repeating-linear-gradient(-45deg, var(--color-hatch) 0 2px, transparent 2px 5px);
 }

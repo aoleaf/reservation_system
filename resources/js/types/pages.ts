@@ -89,6 +89,21 @@ export type PaymentKind = 'paid' | 'onsite' | 'monthly';
 /** スタッフが入力するときの経路 */
 export type StaffChannel = 'phone' | 'dm' | 'walkin';
 
+/** スタッフ画面の予約1件（予約一覧とカレンダーのパネルで使う） */
+export type AdminEntry = {
+    id: string;
+    name: string;
+    /** 連絡用の電話番号 */
+    phone: string | null;
+    kind: ReservationKind;
+    partySize: number;
+    payment: PaymentKind;
+    channel: Channel;
+    channelLabel: string;
+    /** 今キャンセルしたときの返金額と説明 */
+    cancel: { refund: number; note: string };
+};
+
 export type AdminTodayProps = {
     date: ISODate;
     label: string;
@@ -100,19 +115,7 @@ export type AdminTodayProps = {
         slot: SlotView;
         /** この枠に予約を入れるリンク（体験が入れば体験、平日など体験が無理なら月謝。どちらも無理なら null） */
         add: { kind: ReservationKind; remaining: number } | null;
-        entries: {
-            id: string;
-            name: string;
-            /** 連絡用の電話番号 */
-            phone: string | null;
-            kind: ReservationKind;
-            partySize: number;
-            payment: PaymentKind;
-            channel: Channel;
-            channelLabel: string;
-            /** 今キャンセルしたときの返金額と説明 */
-            cancel: { refund: number; note: string };
-        }[];
+        entries: AdminEntry[];
     }[];
 };
 
@@ -125,6 +128,10 @@ export type AdminSlotCell = SlotView & {
     usedTotal: number;
     /** 埋まり具合の濃さ（0=空き 〜 4=満席） */
     fill: 0 | 1 | 2 | 3 | 4;
+    /** 体験だけ受けられる空き（土日で月謝が上限に達した枠の空き席。それ以外は 0） */
+    trialOnlyFree: number;
+    /** 枠の印。満席を優先し、満席でなく月謝が上限なら monthlyFull。どちらでもなければ null */
+    mark: 'full' | 'monthlyFull' | null;
     /** 予約の件数（お休みにできない理由の表示用） */
     reservationCount: number;
     /** 予約が無く、お休みにできるか */
@@ -142,7 +149,14 @@ export type AdminSlotsProps = {
         leadingBlanks: number;
         days: (CalendarDay & { label: string; closed: boolean; slots: AdminSlotCell[] })[];
     }[];
-    initialDate: ISODate;
+    /** 選んでいる日（?date=）。パネルに出す。選んでいなければ null */
+    selected: {
+        date: ISODate;
+        label: string;
+        slots: (AdminSlotCell & { entries: AdminEntry[] })[];
+        /** 1日まとめての操作。営業の枠があれば pause、受付停止だけなら resume、どちらもなければ null */
+        dayAction: 'pause' | 'resume' | null;
+    } | null;
 };
 
 // ---- 生徒さん ----

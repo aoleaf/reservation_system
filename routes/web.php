@@ -67,6 +67,7 @@ Route::get('/admin/reservations/new', fn (Request $r) => Inertia::render('admin/
 
 Route::get('/admin/slots', fn (Request $r) => Inertia::render('admin/slots', [
     'month' => $r->query('month'),
+    'date' => $r->query('date'),
 ]))->name('admin.slots');
 
 Route::get('/admin/members', fn (Request $r) => Inertia::render('admin/members', [

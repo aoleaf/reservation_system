@@ -136,6 +136,14 @@ export const mockActions: Actions = {
         cb?.onFinish?.();
     },
 
+    setDayStatus({ date, status }, cb) {
+        const s = st();
+        const targets = s.slots.filter((x) => x.date === date && x.status !== 'closed' && x.status !== status);
+        if (s.slots.every((x) => x.date !== date)) return fail(cb, { date: 'この日は枠がありません' });
+        for (const x of targets) st().setSlotStatus(x.id, status);
+        cb?.onFinish?.();
+    },
+
     cancelByStaff({ reservationId }, cb) {
         const s = st();
         const r = s.reservations.find((x) => x.id === reservationId);

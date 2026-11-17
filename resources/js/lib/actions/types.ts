@@ -1,5 +1,5 @@
 // 書き込みのインターフェース。画面は '@/lib/actions' からだけ書き込む。本番でも残す。
-import type { Contact, SlotId, SlotStatus } from '@/types/models';
+import type { Contact, ISODate, SlotId, SlotStatus } from '@/types/models';
 
 export type Callbacks = {
     onError?: (errors: Record<string, string>) => void;
@@ -14,6 +14,8 @@ export type CreateStaffReservationInput =
 export type SubmitMonthlyScheduleInput = { month: string; slotIds: SlotId[] };
 export type ChangeMonthlySessionInput = { reservationId: string; toSlotId: SlotId };
 export type SetSlotStatusInput = { slotId: SlotId; status: SlotStatus };
+/** 1日分をまとめて受付停止／再開する（お休みの枠はそのまま） */
+export type SetDayStatusInput = { date: ISODate; status: 'open' | 'paused' };
 export type CancelByTokenInput = { token: string };
 /** スタッフのキャンセル入力（電話でのキャンセル、お店都合でお願いしたとき） */
 export type CancelByStaffInput = { reservationId: string };
@@ -24,6 +26,7 @@ export type Actions = {
     submitMonthlySchedule: (input: SubmitMonthlyScheduleInput, cb?: Callbacks) => void;
     changeMonthlySession: (input: ChangeMonthlySessionInput, cb?: Callbacks) => void;
     setSlotStatus: (input: SetSlotStatusInput, cb?: Callbacks) => void;
+    setDayStatus: (input: SetDayStatusInput, cb?: Callbacks) => void;
     cancelByToken: (input: CancelByTokenInput, cb?: Callbacks) => void;
     cancelByStaff: (input: CancelByStaffInput, cb?: Callbacks) => void;
 };
