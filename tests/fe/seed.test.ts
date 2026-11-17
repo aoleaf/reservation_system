@@ -42,7 +42,7 @@ describe('seed', () => {
     it('定員超えの枠がない・お休みの枠に予約がない', () => {
         for (const s of slots) {
             expect(seatsUsed(s, rs)).toBeLessThanOrEqual(s.capacity);
-            if (s.blocked) expect(seatsUsed(s, rs)).toBe(0);
+            if (s.status === 'closed') expect(seatsUsed(s, rs)).toBe(0);
         }
     });
 
@@ -60,6 +60,14 @@ describe('seed', () => {
         expect(remaining(s, rs, 'trial')).toBe(0);
     });
 
+    it('12/12 10:00 は受付停止で、予約が残っていて新しい予約は入らない', () => {
+        const s = slot('2026-12-12', '10:00');
+        expect(s.status).toBe('paused');
+        expect(seatsUsed(s, rs)).toBeGreaterThan(0);
+        expect(remaining(s, rs, 'trial')).toBe(0);
+        expect(remaining(s, rs, 'monthly')).toBe(0);
+    });
+
     it('デモ用の体験予約（cancelToken demo）が 11/22 10:00 に 2名 9,000円', () => {
         const r = rs.find((x) => x.cancelToken === 'demo')!;
         expect(r.slotId).toBe(slotIdOf('2026-11-22', '10:00'));
@@ -68,9 +76,9 @@ describe('seed', () => {
         expect(r.channel).toBe('web');
     });
 
-    it('お休みの日は3枠とも blocked', () => {
+    it('お休みの日は3枠とも closed', () => {
         for (const d of ['2026-11-04', '2026-11-10', '2026-11-17', '2026-11-26', '2026-12-02', '2026-12-08', '2026-12-16', '2026-12-24']) {
-            expect(slots.filter((s) => s.date === d && s.blocked)).toHaveLength(3);
+            expect(slots.filter((s) => s.date === d && s.status === 'closed')).toHaveLength(3);
         }
     });
 });

@@ -12,9 +12,10 @@ const ROLES: { role: Role; label: string; to: string }[] = [
     { role: 'staff', label: 'スタッフ', to: 'admin.today' },
 ];
 
-// 体験日 11/22 のデモ予約（cancelToken 'demo'）が基準
+// 11/12 は初期値。締め後（11/16）は12月の日程の受付が終わった日。3日前・前日・当日 は体験日 11/22 のデモ予約（cancelToken 'demo'）が基準
 const DAYS = [
-    { date: '2026-11-20', label: '11/20' },
+    { date: '2026-11-12', label: '11/12' },
+    { date: '2026-11-16', label: '締め後' },
     { date: '2026-11-19', label: '3日前' },
     { date: '2026-11-21', label: '前日' },
     { date: '2026-11-22', label: '当日' },

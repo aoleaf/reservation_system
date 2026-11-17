@@ -15,7 +15,8 @@ export function seatsUsed(slot: Slot, rs: Reservation[], kind?: ReservationKind)
 }
 
 export function remaining(slot: Slot, rs: Reservation[], kind: ReservationKind): number {
-    if (slot.blocked) return 0;
+    // 受付停止とお休みの枠には、新しい予約を入れない
+    if (slot.status !== 'open') return 0;
     const free = slot.capacity - seatsUsed(slot, rs);
     if (kind === 'trial') return slot.trialOpen ? Math.max(0, free) : 0;
     if (slot.monthlyLimit === null) return Math.max(0, free);

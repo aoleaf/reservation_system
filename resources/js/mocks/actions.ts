@@ -123,12 +123,15 @@ export const mockActions: Actions = {
         router.visit(route('member.index'));
     },
 
-    setSlotBlocked({ slotId, blocked }, cb) {
+    setSlotStatus({ slotId, status }, cb) {
         const s = st();
         const slot = s.slots.find((x) => x.id === slotId);
         if (!slot) return fail(cb, { slotId: '枠が見つかりません' });
-        if (blocked && seatsUsed(slot, s.reservations) > 0) return fail(cb, { slotId: '予約が入っている枠はお休みにできません' });
-        s.setSlotBlocked(slotId, blocked);
+        // 予約が残っている枠はお休みにできない（受付停止 → キャンセルを入力 → お休み の順）
+        if (status === 'closed' && seatsUsed(slot, s.reservations) > 0) {
+            return fail(cb, { slotId: '予約が入っている枠はお休みにできません。受付停止にして、キャンセルを入力してからお休みにしてください' });
+        }
+        s.setSlotStatus(slotId, status);
         cb?.onFinish?.();
     },
 

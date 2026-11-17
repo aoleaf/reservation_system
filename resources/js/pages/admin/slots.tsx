@@ -3,11 +3,18 @@ import MobileShell from '@/components/mobile-shell';
 import MonthCalendar from '@/components/month-calendar';
 import SeatMeter from '@/components/seat-meter';
 import StatusBadge from '@/components/status-badge';
-import { setSlotBlocked } from '@/lib/actions';
+import { setSlotStatus } from '@/lib/actions';
+import type { SlotStatus } from '@/types/models';
 import type { AdminSlotsProps } from '@/types/pages';
 import { Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+
+const STATUS_OPTIONS: { value: SlotStatus; label: string }[] = [
+    { value: 'open', label: '営業' },
+    { value: 'paused', label: '受付停止' },
+    { value: 'closed', label: 'お休み' },
+];
 
 /** スタッフの月カレンダー。日を選ぶと枠ごとの人数とお休みの切替が出る */
 export default function AdminSlots({ month, monthLabel, prevMonth, nextMonth, leadingBlanks, initialDate, days }: AdminSlotsProps) {
@@ -15,9 +22,9 @@ export default function AdminSlots({ month, monthLabel, prevMonth, nextMonth, le
     const [error, setError] = useState<{ slotId: string; message: string } | null>(null);
     const day = days.find((d) => d.date === selected) ?? days[0];
 
-    const toggle = (slotId: string, blocked: boolean) => {
+    const change = (slotId: string, status: SlotStatus) => {
         setError(null);
-        setSlotBlocked({ slotId, blocked: !blocked }, { onError: (e) => setError({ slotId, message: Object.values(e)[0] }) });
+        setSlotStatus({ slotId, status }, { onError: (e) => setError({ slotId, message: Object.values(e)[0] }) });
     };
 
     return (
@@ -53,7 +60,7 @@ export default function AdminSlots({ month, monthLabel, prevMonth, nextMonth, le
                             <span className="text-[10px]">休</span>
                         ) : (
                             d.slots.map((s) => (
-                                <span key={s.id} className={'flex ' + (s.blocked ? 'opacity-30' : '')}>
+                                <span key={s.id} className={'flex ' + (s.status === 'closed' ? 'opacity-30' : '')}>
                                     <SeatMeter monthly={s.used.monthly} trial={s.used.trial} capacity={s.capacity} compact />
                                 </span>
                             ))
@@ -73,22 +80,25 @@ export default function AdminSlots({ month, monthLabel, prevMonth, nextMonth, le
                     {day.slots.length === 0 && <p className="text-ink-soft text-sm">この日は枠がありません。</p>}
                     <ul className="space-y-2">
                         {day.slots.map((s) => (
-                            <li key={s.id} className={'border-line rounded-lg border p-3 ' + (s.blocked ? 'bg-line/50' : 'bg-white')}>
+                            <li key={s.id} className={'border-line rounded-lg border p-3 ' + (s.status === 'closed' ? 'bg-line/50' : 'bg-white')}>
                                 <div className="flex items-center gap-2">
                                     <span className="font-bold whitespace-nowrap tabular-nums">
                                         {s.start}〜{s.end}
                                     </span>
-                                    {s.blocked && <StatusBadge kind="closed" />}
-                                    <button
-                                        type="button"
-                                        onClick={() => toggle(s.id, s.blocked)}
-                                        className={
-                                            'ml-auto rounded-md border px-2.5 py-1 text-xs font-bold ' +
-                                            (s.blocked ? 'border-brand text-brand bg-white' : 'border-line text-ink-soft bg-white')
-                                        }
-                                    >
-                                        {s.blocked ? '受付を再開' : 'お休みにする'}
-                                    </button>
+                                    {s.status !== 'open' && <StatusBadge kind={s.status} />}
+                                    <div className="border-line ml-auto flex overflow-hidden rounded-md border text-xs" role="group" aria-label="枠の状態">
+                                        {STATUS_OPTIONS.map((o) => (
+                                            <button
+                                                key={o.value}
+                                                type="button"
+                                                aria-pressed={s.status === o.value}
+                                                onClick={() => change(s.id, o.value)}
+                                                className={'px-2 py-1 ' + (s.status === o.value ? 'bg-brand font-bold text-white' : 'text-ink-soft bg-white')}
+                                            >
+                                                {o.label}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                                 <div className="mt-2">
                                     <SeatMeter monthly={s.used.monthly} trial={s.used.trial} capacity={s.capacity} />

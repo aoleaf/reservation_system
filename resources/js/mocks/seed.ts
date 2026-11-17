@@ -4,7 +4,7 @@ import type { Channel, ISODate, Member, MemberMonth, Reservation, Settings, Slot
 import { datesInMonth, isWeekendDate } from './dates';
 import { canBook } from './selectors';
 
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 export type Role = 'customer' | 'member' | 'staff';
 
@@ -21,7 +21,8 @@ export type MockData = {
     seq: number;
 };
 
-export const SEED_TODAY = '2026-11-20';
+// 12月分の日程の締め（11/15）より前にして、生徒の「来月を選ぶ」をデモできるようにする
+export const SEED_TODAY = '2026-11-12';
 
 export function mulberry32(a: number) {
     return function () {
@@ -52,7 +53,15 @@ export function createSeed(): MockData {
     const pick = <T,>(xs: readonly T[]) => xs[Math.floor(rand() * xs.length)];
     const phone = () => `090-${String(1000 + Math.floor(rand() * 9000))}-${String(1000 + Math.floor(rand() * 9000))}`;
 
-    const settings: Settings = { trialPrice: 4500, stripeRate: 0.036, sessionsPerMonth: 4, weekendMonthlyLimit: 3 };
+    const settings: Settings = {
+        trialPrice: 4500,
+        stripeRate: 0.036,
+        sessionsPerMonth: 4,
+        weekendMonthlyLimit: 3,
+        shopPhone: '000-0000-0000', // 仮。実際の番号を森下様にいただく
+        scheduleOpenDay: 1, // 仮。受付開始日は森下様に確認中
+        scheduleDeadlineDay: 15,
+    };
 
     // 枠：11/1〜12/31 の全日に3枠
     const slots: Slot[] = [];
@@ -68,7 +77,7 @@ export function createSeed(): MockData {
                     capacity: CAPACITY,
                     trialOpen: weekend,
                     monthlyLimit: weekend ? settings.weekendMonthlyLimit : null,
-                    blocked: CLOSED_DAYS.includes(date),
+                    status: CLOSED_DAYS.includes(date) ? 'closed' : 'open',
                 });
             }
         }
@@ -115,7 +124,7 @@ export function createSeed(): MockData {
             addMonthly(memberId, id, createdAt);
             usedDates.add(slotById.get(id)!.date);
         }
-        const open = slots.filter((s) => s.date.startsWith(month) && !s.blocked);
+        const open = slots.filter((s) => s.date.startsWith(month) && s.status === 'open');
         const weekdays = open.filter((s) => !isWeekendDate(s.date));
         const weekends = open.filter((s) => isWeekendDate(s.date));
         let guard = 0;
@@ -139,8 +148,8 @@ export function createSeed(): MockData {
     for (const m of members) {
         const n = Number(m.id.slice(1));
         const submitted = n >= 2 && n <= 26;
-        if (submitted) fillMonth(m.id, '2026-12', [], '2026-11-18T10:00:00');
-        memberMonths.push({ memberId: m.id, month: '2026-12', submittedAt: submitted ? '2026-11-18T10:00:00' : null, changeUsed: false });
+        if (submitted) fillMonth(m.id, '2026-12', [], '2026-11-05T10:00:00');
+        memberMonths.push({ memberId: m.id, month: '2026-12', submittedAt: submitted ? '2026-11-05T10:00:00' : null, changeUsed: false });
     }
 
     // 体験：月謝の後に入れる
@@ -156,7 +165,7 @@ export function createSeed(): MockData {
             amount: settings.trialPrice * partySize,
             contact: { name, phone: phone(), email: channel === 'web' ? 'guest@example.com' : undefined },
             cancelToken: channel === 'web' ? `t${seq + 1}x${Math.floor(rand() * 1e6)}` : undefined,
-            createdAt: '2026-11-15T12:00:00',
+            createdAt: '2026-11-10T12:00:00',
             ...extra,
         });
         return true;
@@ -178,9 +187,13 @@ export function createSeed(): MockData {
     // 11月末と12月の土日にまばらに
     const channels: Channel[] = ['web', 'web', 'phone', 'dm'];
     for (const s of slots) {
-        if (s.date < '2026-11-28' || !s.trialOpen || s.blocked) continue;
+        if (s.date < '2026-11-28' || !s.trialOpen || s.status !== 'open') continue;
         if (rand() < 0.3) addTrial(s.id, 1 + Math.floor(rand() * 2), pick(channels));
     }
+
+    // 受付停止のデモ：予約が入ったまま、新しい予約だけ止めている枠
+    const paused = slotById.get(slotIdOf('2026-12-12', '10:00'))!;
+    paused.status = 'paused';
 
     return { slots, reservations, members, memberMonths, settings, today: SEED_TODAY, role: 'customer', currentMemberId: 'm01', seq };
 }

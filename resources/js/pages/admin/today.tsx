@@ -33,12 +33,12 @@ export default function AdminToday({ date, label, isToday, prevDate, nextDate, c
 
             <div className="space-y-3">
                 {slots.map(({ slot, add, entries }) => (
-                    <section key={slot.id} className={'border-line rounded-lg border p-3 ' + (slot.blocked ? 'bg-line/40' : 'bg-white')}>
+                    <section key={slot.id} className={'border-line rounded-lg border p-3 ' + (slot.status === 'closed' ? 'bg-line/40' : 'bg-white')}>
                         <div className="mb-2 flex items-center gap-2">
                             <h3 className="font-bold whitespace-nowrap tabular-nums">
                                 {slot.start}〜{slot.end}
                             </h3>
-                            {slot.blocked && <StatusBadge kind="closed" />}
+                            {slot.status !== 'open' && <StatusBadge kind={slot.status} />}
                         </div>
                         <SeatMeter monthly={slot.used.monthly} trial={slot.used.trial} capacity={slot.capacity} />
                         {entries.length > 0 ? (
@@ -52,7 +52,7 @@ export default function AdminToday({ date, label, isToday, prevDate, nextDate, c
                                 ))}
                             </ul>
                         ) : (
-                            !slot.blocked && <p className="text-ink-soft mt-2 text-sm">予約はありません</p>
+                            slot.status !== 'closed' && <p className="text-ink-soft mt-2 text-sm">予約はありません</p>
                         )}
                         {add && (
                             <Link
