@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\CancelController;
 use App\Http\Controllers\Dev;
 use App\Http\Controllers\Member;
+use App\Http\Controllers\LineWebhookController;
 use App\Http\Controllers\ReserveController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Http\Request;
@@ -59,12 +60,17 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/days/{date}', [Admin\SlotController::class, 'updateDay'])->name('days.update');
     Route::get('/settings', [Admin\SettingsController::class, 'edit'])->name('settings');
     Route::patch('/settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/line/group', [Admin\SettingsController::class, 'chooseLineGroup'])->name('settings.line.group');
+    Route::post('/settings/line/test', [Admin\SettingsController::class, 'testLine'])->name('settings.line.test');
     Route::get('/members', [Admin\MemberController::class, 'index'])->name('members');
     Route::get('/members/{id}', [Admin\MemberController::class, 'show'])->name('members.show');
 });
 
 // Stripe の通知（署名で確かめる）
 Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
+
+// LINE の通知（署名で確かめる。グループに招待されたら送り先の候補にする）
+Route::post('/line/webhook', LineWebhookController::class)->name('line.webhook');
 
 // 開発用の偽物の決済画面（Stripe のキーが無い開発環境だけ。本番では作らない）
 if (! app()->isProduction()) {
