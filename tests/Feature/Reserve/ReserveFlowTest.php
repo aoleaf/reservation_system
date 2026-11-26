@@ -95,7 +95,7 @@ class ReserveFlowTest extends TestCase
         $this->assertSame("cs_fake_{$r->code}", $r->stripe_checkout_session_id);
         $this->assertStringContainsString("/dev/checkout/cs_fake_{$r->code}", $res->headers->get('X-Inertia-Location'));
         // 仮押さえの間は、その席は使われている
-        $this->assertSame(2, $s->holdingReservations()->sum('party_size'));
+        $this->assertSame(2, (int) $s->holdingReservations()->sum('party_size')); // MySQL は合計を文字列で返す
     }
 
     public function test_満席なら仮押さえを作らない(): void
