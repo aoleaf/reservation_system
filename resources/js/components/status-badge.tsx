@@ -1,11 +1,13 @@
-export type BadgeKind = 'paid' | 'onsite' | 'monthly' | 'full' | 'closed' | 'submitted' | 'unsubmitted';
+export type BadgeKind = 'paid' | 'onsite' | 'monthly' | 'full' | 'monthlyFull' | 'closed' | 'paused' | 'submitted' | 'unsubmitted';
 
 const STYLE: Record<BadgeKind, { label: string; className: string }> = {
     paid: { label: '支払済', className: 'bg-paid-soft text-paid border-paid/40' },
     onsite: { label: '当日払い', className: 'bg-onsite-soft text-onsite border-onsite/40' },
     monthly: { label: '月謝', className: 'bg-brand text-white border-brand' },
     full: { label: '満席', className: 'bg-alert-soft text-alert border-alert/40' },
+    monthlyFull: { label: '月謝満', className: 'bg-onsite-soft text-onsite border-onsite/40' },
     closed: { label: 'お休み', className: 'bg-line text-ink-soft border-line' },
+    paused: { label: '受付停止', className: 'bg-onsite-soft text-onsite border-onsite/40' },
     submitted: { label: '提出済', className: 'bg-paid-soft text-paid border-paid/40' },
     unsubmitted: { label: '未提出', className: 'bg-alert-soft text-alert border-alert/40' },
 };

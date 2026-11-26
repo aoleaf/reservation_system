@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone' => env('APP_TIMEZONE', 'Asia/Tokyo'), // 「今日」・締め日・返金の日数は日本時間で数える
 
     /*
     |--------------------------------------------------------------------------
@@ -78,7 +78,7 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => 'ja', // 日本語だけのサービスなので固定する（.env の APP_LOCALE に左右されない）
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
