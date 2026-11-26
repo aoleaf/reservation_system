@@ -8,7 +8,10 @@ use App\Enums\SlotStatus;
 use App\Http\Presenters\BookingPresenter;
 use App\Models\Reservation;
 use App\Models\Slot;
+use App\Rules\EmailAddress;
+use App\Rules\PhoneNumber;
 use App\Services\Booking\WebReservationService;
+use App\Support\ContactFormat;
 use App\Support\JaDate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -86,7 +89,12 @@ class ReserveController extends Controller
         $slot = $this->trialSlot($request->query('slot'), $p);
         $n = self::partySize($request->query('n'));
         $contact = $this->contact($request);
-        $complete = trim($contact['name']) !== '' && trim($contact['phone']) !== '' && trim($contact['email']) !== '';
+        $contactError = match (true) {
+            trim($contact['name']) === '' || $contact['phone'] === '' || $contact['email'] === '' => 'お名前・電話番号・メールアドレスを入力してください',
+            ! ContactFormat::isPhone($contact['phone']) => ContactFormat::PHONE_MESSAGE,
+            ! ContactFormat::isEmail($contact['email']) => ContactFormat::EMAIL_MESSAGE,
+            default => null,
+        };
 
         return Inertia::render('reserve/confirm', [
             'slot' => $slot ? $p->slotView($slot, ReservationKind::Trial) : null,
@@ -97,25 +105,26 @@ class ReserveController extends Controller
             'amount' => $p->settings()->trial_price * $n,
             'cancelPolicy' => $p->cancelPolicy(),
             'cancelGuide' => $p->cancelGuide(),
-            'contactError' => $complete ? null : 'お名前・電話番号・メールアドレスを入力してください',
+            'contactError' => $contactError,
         ]);
     }
 
     /** 「支払う」：仮押さえを作り、決済のページへ移る */
     public function store(Request $request, WebReservationService $service): HttpResponse
     {
+        $this->normalizeContact($request);
         $data = $request->validate([
             'slotId' => ['required', 'integer'],
             'partySize' => ['required', 'integer', 'min:1', 'max:20'],
             'contact.name' => ['required', 'string', 'max:100'],
-            'contact.phone' => ['required', 'string', 'max:32'],
-            'contact.email' => ['required', 'email', 'max:255'],
+            'contact.phone' => ['required', 'string', 'max:32', new PhoneNumber],
+            'contact.email' => ['required', 'string', new EmailAddress],
         ], [
             'slotId.*' => '枠を選んでください',
             'partySize.*' => '人数を選んでください',
             'contact.name.*' => 'お名前を入力してください',
-            'contact.phone.*' => '電話番号を入力してください',
-            'contact.email.*' => 'メールアドレスを確かめてください',
+            'contact.phone.required' => '電話番号を入力してください',
+            'contact.email.required' => 'メールアドレスを入力してください',
         ]);
 
         return Inertia::location($service->start($data));
@@ -177,6 +186,19 @@ class ReserveController extends Controller
     {
         $s = fn (string $k) => is_string($request->query($k)) ? $request->query($k) : '';
 
-        return ['name' => $s('name'), 'phone' => $s('phone'), 'email' => $s('email')];
+        return ['name' => $s('name'), 'phone' => ContactFormat::normalizePhone($s('phone')), 'email' => ContactFormat::normalizeEmail($s('email'))];
+    }
+
+    /** 送られてきた連絡先をそろえる（全角を半角に、メールは小文字に）。確かめる前に行う */
+    private function normalizeContact(Request $request): void
+    {
+        $c = $request->input('contact');
+        if (is_array($c)) {
+            $request->merge(['contact' => [
+                'name' => is_string($c['name'] ?? null) ? trim($c['name']) : ($c['name'] ?? null),
+                'phone' => is_string($c['phone'] ?? null) ? ContactFormat::normalizePhone($c['phone']) : ($c['phone'] ?? null),
+                'email' => is_string($c['email'] ?? null) ? ContactFormat::normalizeEmail($c['email']) : ($c['email'] ?? null),
+            ]]);
+        }
     }
 }

@@ -74,10 +74,10 @@ class ReserveFlowTest extends TestCase
         $this->get("/reserve/form?slot={$s->id}&n=abc")->assertInertia(fn (Assert $p) => $p
             ->where('slotLabel', '11月29日（日） 10:00〜12:00')->where('maxParty', 6)->has('options', 6)->where('options.1.amount', 9000)->where('initial.partySize', 1)
         );
-        $this->get("/reserve/confirm?slot={$s->id}&n=2&name=a&phone=1&email=a@example.com")->assertInertia(fn (Assert $p) => $p
+        $this->get("/reserve/confirm?slot={$s->id}&n=2&name=a&phone=090-1234-5678&email=a@example.com")->assertInertia(fn (Assert $p) => $p
             ->where('amount', 9000)->where('contactError', null)->has('cancelPolicy', 3)
         );
-        $this->get("/reserve/confirm?slot={$s->id}&n=2&name=a&phone=1")->assertInertia(fn (Assert $p) => $p->where('contactError', 'お名前・電話番号・メールアドレスを入力してください'));
+        $this->get("/reserve/confirm?slot={$s->id}&n=2&name=a&phone=090-1234-5678")->assertInertia(fn (Assert $p) => $p->where('contactError', 'お名前・電話番号・メールアドレスを入力してください'));
         $this->get('/reserve/form?slot=999999')->assertInertia(fn (Assert $p) => $p->where('slot', null));
         $this->get('/reserve/form?slot='.$this->slot('2026-11-27')->id)->assertInertia(fn (Assert $p) => $p->where('slot', null)); // 平日
     }

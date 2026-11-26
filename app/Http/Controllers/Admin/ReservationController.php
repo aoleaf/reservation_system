@@ -11,8 +11,10 @@ use App\Http\Presenters\BookingPresenter;
 use App\Models\Member;
 use App\Models\Reservation;
 use App\Models\Slot;
+use App\Rules\PhoneNumber;
 use App\Services\Booking\CancellationService;
 use App\Services\Booking\StaffReservationService;
+use App\Support\ContactFormat;
 use App\Support\JaDate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -82,19 +84,23 @@ class ReservationController extends Controller
 
     public function store(Request $request, StaffReservationService $service): RedirectResponse
     {
+        // 電話番号は全角を半角にそろえてから確かめる（空でもよい）
+        $c = $request->input('contact');
+        if (is_array($c) && is_string($c['phone'] ?? null)) {
+            $request->merge(['contact' => ['phone' => ContactFormat::normalizePhone($c['phone']) ?: null] + $c]);
+        }
         $data = $request->validate([
             'kind' => ['required', Rule::enum(ReservationKind::class)],
             'slotId' => ['required', 'integer'],
             'channel' => ['required', Rule::in(['phone', 'dm', 'walkin', 'staff'])],
             'partySize' => ['exclude_unless:kind,trial', 'required', 'integer', 'min:1', 'max:20'],
             'contact.name' => ['exclude_unless:kind,trial', 'required', 'string', 'max:100'],
-            'contact.phone' => ['exclude_unless:kind,trial', 'nullable', 'string', 'max:32'],
+            'contact.phone' => ['exclude_unless:kind,trial', 'nullable', 'string', 'max:32', new PhoneNumber],
             'memberId' => ['exclude_unless:kind,monthly', 'required', 'integer'],
         ], [
             'slotId.*' => '枠を選んでください',
             'partySize.*' => '人数を選んでください',
             'contact.name.*' => 'お名前を入力してください',
-            'contact.phone.*' => '電話番号は32文字までです',
             'memberId.*' => '生徒さんを選んでください',
             'kind.*' => '体験か月謝かを選んでください',
             'channel.*' => '経路を選んでください',
