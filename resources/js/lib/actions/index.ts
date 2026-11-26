@@ -12,6 +12,8 @@ export const {
     setDayStatus,
     cancelByToken,
     cancelByStaff,
+    resolveRefund,
+    updateSettings,
     requestMemberLogin,
     confirmMemberLogin,
 } = httpActions;

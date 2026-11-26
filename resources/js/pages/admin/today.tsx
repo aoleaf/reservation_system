@@ -1,4 +1,5 @@
 import AdminShell from '@/components/admin-shell';
+import RefundIssues from '@/components/refund-issues';
 import ReservationEntries from '@/components/reservation-entries';
 import SeatMeter from '@/components/seat-meter';
 import StatusBadge from '@/components/status-badge';
@@ -7,9 +8,10 @@ import { Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 
 /** その日の予約一覧。枠ごとに体験・月謝の人と支払いの状態。電話でのキャンセルもここで入力する */
-export default function AdminToday({ date, label, isToday, prevDate, nextDate, closed, slots }: AdminTodayProps) {
+export default function AdminToday({ refundIssues, date, label, isToday, prevDate, nextDate, closed, slots }: AdminTodayProps) {
     return (
         <AdminShell title="予約一覧" current="today">
+            <RefundIssues issues={refundIssues} />
             <div className="mb-3 flex items-center justify-between md:mb-5 md:justify-start md:gap-4">
                 <Link
                     href={route('admin.today', { date: prevDate })}

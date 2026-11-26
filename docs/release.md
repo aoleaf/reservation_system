@@ -50,6 +50,12 @@ php artisan import:monthly 12月の予約.csv --dry-run && php artisan import:mo
 - お休みの日は、スタッフの管理画面のカレンダーで設定する
 - 開発用のデータ（BookingDemoSeeder）は本番では入らない（`db:seed` を本番で流しても入れない）
 
+## AWS（EC2 とロードバランサー）で気をつけること
+
+- HTTPS はロードバランサー（ALB）で受け、EC2 には HTTP で渡す形を想定している。アプリはロードバランサーの `X-Forwarded-*` を信用する設定にしてある（bootstrap/app.php の trustProxies）
+- そのため、**EC2 のセキュリティグループは、ロードバランサーからだけ 80 番を受けるように絞る**こと。EC2 に直接届くと、IP を偽ったヘッダーで回数制限をすり抜けられる
+- APP_URL は https の URL にする
+
 ## 4. ずっと動かしておくもの
 
 | もの | コマンド | 止まると |
@@ -76,4 +82,3 @@ php artisan import:monthly 12月の予約.csv --dry-run && php artisan import:mo
 - サーバーとドメイン
 - お店の電話番号・仮押さえの時間（今は60分）
 - 色（シック・和風）の差し替え
-- 料金・締め日などを、お店が自分で変える画面が要るか
