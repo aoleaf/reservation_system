@@ -164,6 +164,12 @@ export type AdminSlotsProps = {
 
 // ---- 生徒さん ----
 
+/** 生徒のログイン（メールアドレスを入れる画面）。errors は Inertia が入れる（リンクが使えなかったときなど） */
+export type MemberLoginProps = { sent: boolean; email: string; minutes: number; errors?: Record<string, string> };
+
+/** ログイン用リンクを開いた画面。valid が false なら期限切れか使用済み */
+export type MemberLoginConfirmProps = { token: string; valid: boolean };
+
 export type MemberSessionView = {
     reservationId: string;
     date: ISODate;
@@ -176,7 +182,8 @@ export type MemberIndexProps = {
     member: { id: string; name: string } | null;
     months: {
         month: string;
-        label: string; // '今月（2026年11月）'
+        label: string; // '今月（2026年11月）'・'来月（…）'・'再来月（…）'
+        monthLabel: string; // '2026年11月'
         submitted: boolean;
         sessions: MemberSessionView[];
         changeRemaining: number;

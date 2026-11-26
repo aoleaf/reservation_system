@@ -167,4 +167,14 @@ export const mockActions: Actions = {
         s.updateReservation(r.id, { status: 'canceled', refundedAmount: refunded });
         cb?.onFinish?.();
     },
+
+    // ログインは BE だけで行う（モックにはログインが無い）
+    requestMemberLogin: (_input, cb) => {
+        cb?.onFinish?.();
+        router.visit(route('member.index'));
+    },
+    confirmMemberLogin: (_input, cb) => {
+        cb?.onFinish?.();
+        router.visit(route('member.index'));
+    },
 };

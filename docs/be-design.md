@@ -273,3 +273,24 @@ Stripe ─ webhook ─> StripeWebhookController ─> サービス（確定・期
 
 ### 確認すること
 - Q6：最初に使い始めるときに、どの機能が必要か
+
+## CSV の取り込み（森下様の回答 Q5）
+
+お店で作った CSV を、次の順で取り込む。Excel で保存した Shift_JIS でも UTF-8 でも読める。1行目は見出し（列の順番は問わない）。
+
+| ファイル | 見出し | 例 |
+|---|---|---|
+| 生徒の一覧 | 名前, 電話番号, メールアドレス | `佐藤 陽子, 090-1111-2222, yoko@example.com` |
+| 月謝の予約（1行に1回） | メールアドレス, 日付, 開始時刻 | `yoko@example.com, 2026-12-03, 10:00`（日付は 2026/12/3 でも可） |
+
+```
+docker compose exec app php artisan import:members storage/app/生徒.csv --dry-run   # まず確認だけ
+docker compose exec app php artisan import:members storage/app/生徒.csv
+docker compose exec app php artisan import:monthly storage/app/12月の予約.csv --dry-run
+docker compose exec app php artisan import:monthly storage/app/12月の予約.csv
+```
+
+- 1行でもエラーがあれば何も入れず、エラーの行をすべて表示する（途中まで入ることはない）
+- 生徒はメールアドレスで見分ける。同じメールアドレスなら名前と電話番号を更新する
+- 予約：同じ予約は飛ばす（何度流してもよい）。満席（土日の月謝の上限も）・お休みの枠・同じ日に2回はエラー。受付停止の枠には入れる（もともとの予約を移すため）
+- 4回そろった月は、提出済みにする

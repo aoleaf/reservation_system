@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'staff' => \App\Http\Middleware\EnsureStaff::class,
+            'member' => \App\Http\Middleware\EnsureMember::class,
         ]);
 
         $middleware->web(append: [

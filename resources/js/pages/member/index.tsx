@@ -4,7 +4,7 @@ import StatusBadge from '@/components/status-badge';
 import type { MemberIndexProps } from '@/types/pages';
 import { Link } from '@inertiajs/react';
 
-/** 生徒のマイページ：今月・来月の回と日程変更の残り回数 */
+/** 生徒のマイページ：今月・来月（受付中なら再来月も）の回と日程変更の残り回数 */
 export default function MemberIndex({ member, months, sessionsPerMonth }: MemberIndexProps) {
     if (!member) {
         return (
@@ -49,7 +49,7 @@ export default function MemberIndex({ member, months, sessionsPerMonth }: Member
                             <>
                                 {m.canSchedule && (
                                     <Link href={route('member.schedule', m.month)} className="bg-brand block rounded-lg py-3 text-center font-bold text-white">
-                                        来月の日程を選ぶ（{sessionsPerMonth}回）
+                                        {m.monthLabel}の日程を選ぶ（{sessionsPerMonth}回）
                                     </Link>
                                 )}
                                 <p className={'mt-2 text-sm ' + (m.canSchedule ? 'text-ink-soft text-center' : 'text-alert font-bold')}>

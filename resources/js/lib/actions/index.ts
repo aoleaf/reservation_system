@@ -7,10 +7,30 @@ import type { Actions } from './types';
 
 export type * from './types';
 
-/** BE に移した action（PR 2：スタッフ画面） */
-const ON_SERVER: (keyof Actions)[] = ['createStaffReservation', 'cancelByStaff', 'setSlotStatus', 'setDayStatus'];
+/** BE に移した action（PR 2：スタッフ画面、PR 3：生徒画面） */
+const ON_SERVER: (keyof Actions)[] = [
+    'createStaffReservation',
+    'cancelByStaff',
+    'setSlotStatus',
+    'setDayStatus',
+    'requestMemberLogin',
+    'confirmMemberLogin',
+    'submitMonthlySchedule',
+    'changeMonthlySession',
+];
 
 const base: Actions = import.meta.env.VITE_MOCK === 'true' ? mockActions : httpActions;
 const actions: Actions = { ...base, ...Object.fromEntries(ON_SERVER.map((k) => [k, httpActions[k]])) };
 
-export const { createWebReservation, createStaffReservation, submitMonthlySchedule, changeMonthlySession, setSlotStatus, setDayStatus, cancelByToken, cancelByStaff } = actions;
+export const {
+    createWebReservation,
+    createStaffReservation,
+    submitMonthlySchedule,
+    changeMonthlySession,
+    setSlotStatus,
+    setDayStatus,
+    cancelByToken,
+    cancelByStaff,
+    requestMemberLogin,
+    confirmMemberLogin,
+} = actions;
