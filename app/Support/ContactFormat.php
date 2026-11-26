@@ -48,5 +48,5 @@ final class ContactFormat
 
     public const EMAIL_MESSAGE = 'メールアドレスの形を確かめてください（例：taro@example.com）';
 
-    public const PHONE_MESSAGE = '電話番号は 0 から始まる 10〜11 桁で入れてください（例：090-1234-5678）';
+    public const PHONE_MESSAGE = '電話番号の桁数を確かめてください（携帯は 11 桁・固定電話は 10 桁。例：090-1234-5678）';
 }

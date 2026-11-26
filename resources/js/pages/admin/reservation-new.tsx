@@ -1,6 +1,7 @@
 import AdminShell from '@/components/admin-shell';
 import SlotCard from '@/components/slot-card';
 import { createStaffReservation } from '@/lib/actions';
+import { PHONE_MESSAGE, isPhone, normalizePhone } from '@/lib/contact';
 import type { AdminReservationNewProps } from '@/types/pages';
 import { Link } from '@inertiajs/react';
 import { useState } from 'react';
@@ -25,12 +26,17 @@ export default function AdminReservationNew(props: AdminReservationNewProps) {
     const memberFull = member !== null && member.count >= required;
     const sameDay = member !== null && slot !== null && member.dates.includes(slot.date);
 
+    // 電話番号は空でもよい。入れたら形を確かめる
+    const phoneValue = normalizePhone(phone);
+    const phoneError = phoneValue !== '' && !isPhone(phoneValue) ? PHONE_MESSAGE : null;
+
     let blocker: string | null = null;
     if (!slot) blocker = '枠を選んでください';
     else if (monthly && !member) blocker = '生徒さんを選んでください';
     else if (monthly && memberFull) blocker = `この月はもう${required}回入っています`;
     else if (monthly && sameDay) blocker = 'この生徒さんは同じ日にもう予約があります';
     else if (!monthly && !name.trim()) blocker = 'お名前を入力してください';
+    else if (!monthly && phoneError) blocker = '電話番号の形を確かめてください';
 
     const submit = () => {
         if (!slot) return;
@@ -38,7 +44,7 @@ export default function AdminReservationNew(props: AdminReservationNewProps) {
         setErrors({});
         const cb = { onError: setErrors, onFinish: () => setBusy(false) };
         if (monthly) createStaffReservation({ kind: 'monthly', slotId: slot.id, channel, memberId }, cb);
-        else createStaffReservation({ kind: 'trial', slotId: slot.id, channel, partySize: n, contact: { name, phone } }, cb);
+        else createStaffReservation({ kind: 'trial', slotId: slot.id, channel, partySize: n, contact: { name, phone: phoneValue } }, cb);
     };
 
     const kindTab = (k: 'trial' | 'monthly', text: string) => (
@@ -142,7 +148,14 @@ export default function AdminReservationNew(props: AdminReservationNewProps) {
                                 </label>
                                 <label className="block">
                                     <span className="mb-1 block text-sm">電話番号</span>
-                                    <input className={input} value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" />
+                                    <input
+                                        className={input}
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        type="tel"
+                                        placeholder="090-1234-5678（空でもよい）"
+                                    />
+                                    {phoneError && <span className="text-alert mt-1 block text-xs font-bold">{phoneError}</span>}
                                 </label>
                             </>
                         )}
