@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CanceledBy;
+use App\Enums\CancelReason;
 use App\Enums\Channel;
 use App\Enums\RefundStatus;
 use App\Enums\ReservationKind;
@@ -44,6 +45,7 @@ class Reservation extends Model
             'status' => ReservationStatus::class,
             'refund_status' => RefundStatus::class,
             'canceled_by' => CanceledBy::class,
+            'cancel_reason' => CancelReason::class,
             'party_size' => 'integer',
             'amount' => 'integer',
             'refunded_amount' => 'integer',
