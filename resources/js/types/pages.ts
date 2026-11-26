@@ -100,9 +100,12 @@ export type AdminEntry = {
     payment: PaymentKind;
     channel: Channel;
     channelLabel: string;
-    /** 今キャンセルしたときの返金額と説明 */
-    cancel: { refund: number; note: string };
+    /** 今キャンセルしたときの返金額と説明。customer＝お客様の都合（規定どおり）／shop＝お店の都合（全額返金） */
+    cancel: Record<CancelReason, { refund: number; note: string }>;
 };
+
+/** キャンセルの理由。お店の都合（お休みにするためにお願いした等）は全額返金 */
+export type CancelReason = 'customer' | 'shop';
 
 export type AdminTodayProps = {
     date: ISODate;

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -53,30 +54,18 @@ Route::get('/member/change/{id}', fn (string $id) => Inertia::render('member/cha
     'reservationId' => $id,
 ]))->name('member.change');
 
-// スタッフ
-Route::get('/admin', fn (Request $r) => Inertia::render('admin/today', [
-    'date' => $r->query('date'),
-]))->name('admin.today');
-
-Route::get('/admin/reservations/new', fn (Request $r) => Inertia::render('admin/reservation-new', [
-    'date' => $r->query('date'),
-    'slotId' => $r->query('slot'),
-    'kind' => $r->query('kind'),
-    'member' => $r->query('member'),
-]))->name('admin.reservations.new');
-
-Route::get('/admin/slots', fn (Request $r) => Inertia::render('admin/slots', [
-    'month' => $r->query('month'),
-    'date' => $r->query('date'),
-]))->name('admin.slots');
-
-Route::get('/admin/members', fn (Request $r) => Inertia::render('admin/members', [
-    'filter' => $r->query('filter'),
-]))->name('admin.members');
-
-Route::get('/admin/members/{id}', fn (string $id) => Inertia::render('admin/member-show', [
-    'memberId' => $id,
-]))->name('admin.members.show');
+// スタッフ（ログインしたスタッフだけ）。props はコントローラーが作る（types/pages.ts と同じ形）
+Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', Admin\TodayController::class)->name('today');
+    Route::get('/reservations/new', [Admin\ReservationController::class, 'create'])->name('reservations.new');
+    Route::post('/reservations', [Admin\ReservationController::class, 'store'])->name('reservations.store');
+    Route::post('/reservations/{reservation}/cancel', [Admin\ReservationController::class, 'cancel'])->name('reservations.cancel');
+    Route::get('/slots', [Admin\SlotController::class, 'index'])->name('slots');
+    Route::patch('/slots/{slot}', [Admin\SlotController::class, 'update'])->name('slots.update');
+    Route::patch('/days/{date}', [Admin\SlotController::class, 'updateDay'])->name('days.update');
+    Route::get('/members', [Admin\MemberController::class, 'index'])->name('members');
+    Route::get('/members/{id}', [Admin\MemberController::class, 'show'])->name('members.show');
+});
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {

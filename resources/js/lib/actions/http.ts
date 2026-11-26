@@ -12,5 +12,5 @@ export const httpActions: Actions = {
     setDayStatus: (input, cb) => router.patch(`/admin/days/${input.date}`, { status: input.status }, opts(cb)),
     setSlotStatus: (input, cb) => router.patch(`/admin/slots/${input.slotId}`, { status: input.status }, opts(cb)),
     cancelByToken: (input, cb) => router.post(`/r/${input.token}/cancel`, {}, opts(cb)),
-    cancelByStaff: (input, cb) => router.post(`/admin/reservations/${input.reservationId}/cancel`, {}, opts(cb)),
+    cancelByStaff: (input, cb) => router.post(`/admin/reservations/${input.reservationId}/cancel`, { reason: input.reason }, opts(cb)),
 };
