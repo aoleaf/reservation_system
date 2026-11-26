@@ -22,7 +22,7 @@ class MemberLoginTest extends TestCase
         $url = null;
         Mail::fake();
         $this->post('/member/login', ['email' => $m->email])->assertRedirect('/member/login');
-        Mail::assertQueued(MemberLoginLink::class, function (MemberLoginLink $mail) use (&$url, $m) {
+        Mail::assertSent(MemberLoginLink::class, function (MemberLoginLink $mail) use (&$url, $m) {
             $url = $mail->url;
 
             return $mail->hasTo($m->email);
@@ -42,7 +42,7 @@ class MemberLoginTest extends TestCase
     {
         Mail::fake();
         $this->post('/member/login', ['email' => 'nobody@example.com'])->assertRedirect('/member/login');
-        Mail::assertNothingQueued();
+        Mail::assertNothingSent();
         $this->get('/member/login')->assertInertia(fn (Assert $p) => $p->where('sent', true));
     }
 
@@ -90,7 +90,7 @@ class MemberLoginTest extends TestCase
         for ($i = 0; $i < 5; $i++) {
             $this->post('/member/login', ['email' => $m->email]);
         }
-        Mail::assertQueuedCount(3);
+        Mail::assertSentCount(3);
         $this->assertSame(3, MemberLoginToken::query()->count());
     }
 

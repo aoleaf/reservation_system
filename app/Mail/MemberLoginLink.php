@@ -5,13 +5,12 @@ namespace App\Mail;
 use App\Models\Member;
 use App\Models\MemberLoginToken;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
-/** 生徒さんへのログイン用リンク */
-class MemberLoginLink extends Mailable implements ShouldQueue
+/** 生徒さんへのログイン用リンク。すぐ届くことが大事なので、キューを通さずにその場で送る */
+class MemberLoginLink extends Mailable
 {
     use Queueable;
 
