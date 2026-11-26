@@ -11,13 +11,12 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 /*
-| FEモック期のルート。
-| サーバーは URL のパラメーターだけを props で渡す。残りの props は
-| モック中は resources/js/mocks/props.ts の builder が作り、本番ではコントローラーが作る。
-| 予約・生徒・スタッフの画面には auth ミドルウェアを付けない（モック期のみ）。
+| 画面の props はコントローラーが作る（resources/js/types/pages.ts と同じ形）。
+| 書き込みは resources/js/lib/actions/http.ts の送り先で受ける。
 */
 
-Route::get('/', fn () => Inertia::render('demo'))->name('demo');
+// 入口はお客様の予約のページ
+Route::redirect('/', '/reserve')->name('home');
 
 // お客様：体験予約。props はコントローラーが作る（types/pages.ts と同じ形）
 Route::get('/reserve', [ReserveController::class, 'index'])->name('reserve.index');
@@ -70,11 +69,8 @@ if (! app()->isProduction()) {
     Route::post('/dev/checkout/{id}/pay', [Dev\DevCheckoutController::class, 'pay'])->name('dev.checkout.pay');
 }
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
-});
+// ログイン後の入口：スタッフは管理画面、生徒さんはマイページへ
+Route::middleware(['auth'])->get('dashboard', fn (Request $r) => redirect()->route($r->user()->isStaff() ? 'admin.today' : 'member.index'))->name('dashboard');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

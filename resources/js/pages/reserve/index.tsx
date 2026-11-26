@@ -29,7 +29,7 @@ export default function ReserveIndex({ unitPrice, note, notice, monthLabel, prev
         );
 
     return (
-        <MobileShell title="体験レッスンの予約" back={route('demo')}>
+        <MobileShell title="体験レッスンの予約">
             {notice && (
                 <p role="status" className="bg-brand-faint mb-4 rounded-lg p-3 text-sm font-bold">
                     {notice}

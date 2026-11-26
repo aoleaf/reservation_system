@@ -8,13 +8,13 @@ import { Link } from '@inertiajs/react';
 export default function MemberIndex({ member, months, sessionsPerMonth }: MemberIndexProps) {
     if (!member) {
         return (
-            <MobileShell title="マイページ" back={route('demo')}>
-                <NotFound message="生徒さんの情報が見つかりません" backHref={route('demo')} backLabel="最初の画面へ" />
+            <MobileShell title="マイページ">
+                <NotFound message="生徒さんの情報が見つかりません" backHref={route('member.login')} backLabel="ログインの画面へ" />
             </MobileShell>
         );
     }
     return (
-        <MobileShell title="マイページ" back={route('demo')}>
+        <MobileShell title="マイページ">
             <p className="mb-4">
                 <span className="font-mincho text-lg font-bold">{member.name}</span> さん
             </p>
@@ -60,6 +60,9 @@ export default function MemberIndex({ member, months, sessionsPerMonth }: Member
                     </section>
                 ))}
             </div>
+            <Link href={route('logout')} method="post" as="button" className="text-ink-soft mt-8 block w-full text-center text-sm underline">
+                ログアウト
+            </Link>
         </MobileShell>
     );
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,10 +16,14 @@ class DashboardTest extends TestCase
         $this->get('/dashboard')->assertRedirect('/login');
     }
 
-    public function test_authenticated_users_can_visit_the_dashboard()
+    public function test_スタッフは管理画面へ_生徒さんはマイページへ()
     {
-        $this->actingAs($user = User::factory()->create());
+        $this->actingAs(User::factory()->create(['role' => UserRole::Staff]))->get('/dashboard')->assertRedirect('/admin');
+        $this->actingAs(User::factory()->create(['role' => UserRole::Member]))->get('/dashboard')->assertRedirect('/member');
+    }
 
-        $this->get('/dashboard')->assertOk();
+    public function test_入口はお客様の予約のページ()
+    {
+        $this->get('/')->assertRedirect('/reserve');
     }
 }
