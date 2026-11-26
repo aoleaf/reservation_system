@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\CancelController;
+use App\Http\Controllers\Dev;
 use App\Http\Controllers\Member;
+use App\Http\Controllers\ReserveController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -15,34 +19,17 @@ use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('demo'))->name('demo');
 
-// お客様：体験予約
-Route::get('/reserve', fn (Request $r) => Inertia::render('reserve/index', [
-    'month' => $r->query('month'),
-]))->name('reserve.index');
+// お客様：体験予約。props はコントローラーが作る（types/pages.ts と同じ形）
+Route::get('/reserve', [ReserveController::class, 'index'])->name('reserve.index');
+Route::get('/reserve/form', [ReserveController::class, 'form'])->name('reserve.form');
+Route::get('/reserve/confirm', [ReserveController::class, 'confirm'])->name('reserve.confirm');
+Route::post('/reserve', [ReserveController::class, 'store'])->middleware('throttle:20,10')->name('reserve.store'); // 仮押さえ → 決済へ
+Route::get('/reserve/complete/{code}', [ReserveController::class, 'complete'])->name('reserve.complete'); // 署名付き
+Route::get('/reserve/abandon/{code}', [ReserveController::class, 'abandon'])->name('reserve.abandon'); // 署名付き・払わずに戻った
 
-Route::get('/reserve/form', fn (Request $r) => Inertia::render('reserve/form', [
-    'slotId' => $r->query('slot'),
-    'n' => $r->query('n'),
-    'name' => $r->query('name'),
-    'phone' => $r->query('phone'),
-    'email' => $r->query('email'),
-]))->name('reserve.form');
-
-Route::get('/reserve/confirm', fn (Request $r) => Inertia::render('reserve/confirm', [
-    'slotId' => $r->query('slot'),
-    'n' => $r->query('n'),
-    'name' => $r->query('name'),
-    'phone' => $r->query('phone'),
-    'email' => $r->query('email'),
-]))->name('reserve.confirm');
-
-Route::get('/reserve/complete/{id}', fn (string $id) => Inertia::render('reserve/complete', [
-    'reservationId' => $id,
-]))->name('reserve.complete');
-
-Route::get('/r/{token}/cancel', fn (string $token) => Inertia::render('reserve/cancel', [
-    'token' => $token,
-]))->name('reserve.cancel');
+// キャンセル用リンク（予約確認メールに入る）
+Route::get('/r/{token}/cancel', [CancelController::class, 'show'])->name('reserve.cancel');
+Route::post('/r/{token}/cancel', [CancelController::class, 'store'])->middleware('throttle:10,10')->name('reserve.cancel.store');
 
 // 生徒さんのログイン（メールのリンク）
 Route::prefix('member/login')->name('member.login')->group(function () {
@@ -73,6 +60,15 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/members', [Admin\MemberController::class, 'index'])->name('members');
     Route::get('/members/{id}', [Admin\MemberController::class, 'show'])->name('members.show');
 });
+
+// Stripe の通知（署名で確かめる）
+Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
+
+// 開発用の偽物の決済画面（Stripe のキーが無い開発環境だけ。本番では作らない）
+if (! app()->isProduction()) {
+    Route::get('/dev/checkout/{id}', [Dev\DevCheckoutController::class, 'show'])->name('dev.checkout.show');
+    Route::post('/dev/checkout/{id}/pay', [Dev\DevCheckoutController::class, 'pay'])->name('dev.checkout.pay');
+}
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {

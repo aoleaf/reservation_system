@@ -294,3 +294,14 @@ docker compose exec app php artisan import:monthly storage/app/12月の予約.cs
 - 生徒はメールアドレスで見分ける。同じメールアドレスなら名前と電話番号を更新する
 - 予約：同じ予約は飛ばす（何度流してもよい）。満席（土日の月謝の上限も）・お休みの枠・同じ日に2回はエラー。受付停止の枠には入れる（もともとの予約を移すため）
 - 4回そろった月は、提出済みにする
+
+## Stripe を本番で使うとき（PR 4）
+
+1. Stripe のダッシュボードで API キー（シークレットキー）を作り、`.env` の `STRIPE_SECRET` に入れる。最初はテストモードのキー（`sk_test_…`）で確かめる
+2. webhook のエンドポイントを登録する：URL は `https://（ドメイン）/stripe/webhook`、イベントは `checkout.session.completed`・`checkout.session.async_payment_succeeded`・`checkout.session.expired`
+3. 表示された署名シークレット（`whsec_…`）を `STRIPE_WEBHOOK_SECRET` に入れる
+4. キューのワーカー（`php artisan queue:work`）とスケジューラー（`php artisan schedule:run` を毎分）を動かす。予約確認・キャンセル受付・間に合わなかった支払いのメールはキューで送る（ログインのメールだけはその場で送る）
+
+- キーが無い開発環境では、開発用の偽物の決済画面（/dev/checkout/{id}）になる。「テストで支払う」は本物の webhook と同じ処理を通る。本番でキーが無いときはエラーにして止める
+- 開発中にキューを動かさずにメールを確かめるときは `php artisan queue:work --stop-when-empty`
+- 返金：お客様のキャンセル（規定どおり）・スタッフのキャンセル（お客様の都合＝規定どおり／お店の都合＝全額）。支払いの記録が無い・失敗したときは refund_status = failed（手で返金する）

@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Stripe の通知は、Stripe の署名で確かめるので CSRF の対象外
+        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
+
         $middleware->alias([
             'staff' => \App\Http\Middleware\EnsureStaff::class,
             'member' => \App\Http\Middleware\EnsureMember::class,

@@ -169,6 +169,24 @@ final class BookingPresenter
         return JaDate::dayLabel($slot->dateString()).' '.$slot->startHm().'〜'.$slot->endHm();
     }
 
+    /** キャンセル規定（mocks の cancelPolicyOf） */
+    public function cancelPolicy(): array
+    {
+        $rate = round($this->settings->stripe_rate * 100, 1);
+
+        return [
+            "2日前まで：お支払い額から決済手数料（{$rate}%）を引いて返金",
+            '前日：お支払い額の50%を返金',
+            '当日・無断のキャンセル：返金なし',
+        ];
+    }
+
+    /** キャンセルの案内（リンクは確認メールで送る） */
+    public function cancelGuide(): string
+    {
+        return "キャンセルは、予約確認メールに記載のキャンセル用リンクから、またはお電話（{$this->settings->shop_phone}）で承ります。";
+    }
+
     public function settings(): Setting
     {
         return $this->settings;

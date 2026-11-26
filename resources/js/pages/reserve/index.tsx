@@ -15,7 +15,7 @@ const MARK: Record<AvailabilityMark, { sign: string; label: string; className: s
 };
 
 /** 体験レッスンの空き状況（○△×）のカレンダー。日を選ぶと、その日の枠が出る */
-export default function ReserveIndex({ unitPrice, note, monthLabel, prevMonth, nextMonth, leadingBlanks, days, initialDate }: ReserveIndexProps) {
+export default function ReserveIndex({ unitPrice, note, notice, monthLabel, prevMonth, nextMonth, leadingBlanks, days, initialDate }: ReserveIndexProps) {
     const [selected, setSelected] = useState(initialDate);
     const day = days.find((d) => d.date === selected && d.mark !== 'none');
 
@@ -30,6 +30,11 @@ export default function ReserveIndex({ unitPrice, note, monthLabel, prevMonth, n
 
     return (
         <MobileShell title="体験レッスンの予約" back={route('demo')}>
+            {notice && (
+                <p role="status" className="bg-brand-faint mb-4 rounded-lg p-3 text-sm font-bold">
+                    {notice}
+                </p>
+            )}
             <div className="mb-4 text-sm leading-relaxed">
                 <p>
                     体験レッスン 1名 <span className="font-bold">{yen(unitPrice)}</span>（2時間）

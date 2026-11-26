@@ -7,10 +7,12 @@ use App\Enums\CanceledBy;
 use App\Enums\CancelReason;
 use App\Enums\RefundStatus;
 use App\Enums\ReservationStatus;
+use App\Mail\CancellationReceipt;
 use App\Models\Reservation;
 use App\Models\Setting;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -25,6 +27,17 @@ class CancellationService
     public function cancelByStaff(Reservation $reservation, CancelReason $reason): Reservation
     {
         return $this->cancel($reservation, CanceledBy::Staff, $reason);
+    }
+
+    /** お客様がキャンセル用リンクから取り消す（規定どおりの返金）。レッスンの日を過ぎたら取り消せない */
+    public function cancelByCustomer(Reservation $reservation): Reservation
+    {
+        $reservation->loadMissing('slot');
+        if (! Refund::isPrepaid($reservation) || $reservation->slot->dateString() < CarbonImmutable::now()->format('Y-m-d')) {
+            throw ValidationException::withMessages(['token' => 'このご予約は、ここからはキャンセルできません。お電話でご連絡ください']);
+        }
+
+        return $this->cancel($reservation, CanceledBy::Customer, CancelReason::Customer);
     }
 
     /** 返金額（先に払っていない予約は 0） */
@@ -61,6 +74,10 @@ class CancellationService
         // お金を動かすのはトランザクションの外で（失敗しても予約のキャンセルは残し、refund_status で分かるようにする）
         if ($refund > 0) {
             $this->refunds->refund($r, $refund);
+        }
+        // Web で予約したお客様には、キャンセル受付のメールを送る
+        if ($r->contact_email && Refund::isPrepaid($r)) {
+            Mail::to($r->contact_email)->send(new CancellationReceipt($r->fresh('slot')));
         }
 
         return $r;
