@@ -76,4 +76,3 @@ php artisan import:monthly 12月の予約.csv --dry-run && php artisan import:mo
 - サーバーとドメイン
 - お店の電話番号・仮押さえの時間（今は60分）
 - 色（シック・和風）の差し替え
-- 料金・締め日などを、お店が自分で変える画面が要るか
