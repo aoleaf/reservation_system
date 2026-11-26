@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\Member;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -42,6 +43,14 @@ Route::get('/reserve/complete/{id}', fn (string $id) => Inertia::render('reserve
 Route::get('/r/{token}/cancel', fn (string $token) => Inertia::render('reserve/cancel', [
     'token' => $token,
 ]))->name('reserve.cancel');
+
+// 生徒さんのログイン（メールのリンク）
+Route::prefix('member/login')->name('member.login')->group(function () {
+    Route::get('/', [Member\LoginController::class, 'create']);
+    Route::post('/', [Member\LoginController::class, 'store'])->middleware('throttle:10,10')->name('.store'); // 同じ IP から10分に10回まで
+    Route::get('/{token}', [Member\LoginController::class, 'confirm'])->name('.confirm');
+    Route::post('/{token}', [Member\LoginController::class, 'consume'])->middleware('throttle:20,10')->name('.consume');
+});
 
 // 生徒さん
 Route::get('/member', fn () => Inertia::render('member/index'))->name('member.index');
