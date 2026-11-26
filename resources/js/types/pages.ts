@@ -182,7 +182,8 @@ export type MemberIndexProps = {
     member: { id: string; name: string } | null;
     months: {
         month: string;
-        label: string; // '今月（2026年11月）'
+        label: string; // '今月（2026年11月）'・'来月（…）'・'再来月（…）'
+        monthLabel: string; // '2026年11月'
         submitted: boolean;
         sessions: MemberSessionView[];
         changeRemaining: number;
