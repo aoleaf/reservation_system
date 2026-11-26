@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Dev;
 use App\Http\Controllers\Member;
 use App\Http\Controllers\ReserveController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -58,6 +59,9 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/members', [Admin\MemberController::class, 'index'])->name('members');
     Route::get('/members/{id}', [Admin\MemberController::class, 'show'])->name('members.show');
 });
+
+// Stripe の通知（署名で確かめる）
+Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
 
 // 開発用の偽物の決済画面（Stripe のキーが無い開発環境だけ。本番では作らない）
 if (! app()->isProduction()) {
