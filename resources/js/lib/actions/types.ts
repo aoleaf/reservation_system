@@ -19,6 +19,7 @@ export type SetSlotStatusInput = { slotId: SlotId; status: SlotStatus };
 export type SetDayStatusInput = { date: ISODate; status: 'open' | 'paused' };
 export type CancelByTokenInput = { token: string };
 /** スタッフのキャンセル入力（電話でのキャンセル、お店都合でお願いしたとき） */
+export type UpdateSettingsInput = { trialPrice: number };
 export type ResolveRefundInput = { reservationId: string };
 export type RequestMemberLoginInput = { email: string };
 export type ConfirmMemberLoginInput = { token: string };
@@ -34,6 +35,7 @@ export type Actions = {
     cancelByToken: (input: CancelByTokenInput, cb?: Callbacks) => void;
     cancelByStaff: (input: CancelByStaffInput, cb?: Callbacks) => void;
     resolveRefund: (input: ResolveRefundInput, cb?: Callbacks) => void;
+    updateSettings: (input: UpdateSettingsInput, cb?: Callbacks) => void;
     requestMemberLogin: (input: RequestMemberLoginInput, cb?: Callbacks) => void;
     confirmMemberLogin: (input: ConfirmMemberLoginInput, cb?: Callbacks) => void;
 };

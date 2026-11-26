@@ -246,6 +246,11 @@ export type AdminReservationNewProps = {
     channels: { value: StaffChannel; label: string }[];
 };
 
+/** 設定（今は体験の料金だけを変えられる） */
+export type AdminSettingsProps = {
+    trialPrice: number;
+};
+
 export type AdminMembersProps = {
     month: string;
     monthLabel: string;

@@ -57,6 +57,8 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/slots', [Admin\SlotController::class, 'index'])->name('slots');
     Route::patch('/slots/{slot}', [Admin\SlotController::class, 'update'])->name('slots.update');
     Route::patch('/days/{date}', [Admin\SlotController::class, 'updateDay'])->name('days.update');
+    Route::get('/settings', [Admin\SettingsController::class, 'edit'])->name('settings');
+    Route::patch('/settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
     Route::get('/members', [Admin\MemberController::class, 'index'])->name('members');
     Route::get('/members/{id}', [Admin\MemberController::class, 'show'])->name('members.show');
 });

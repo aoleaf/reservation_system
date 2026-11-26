@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
-import { CalendarDays, ClipboardList, Plus, Users } from 'lucide-react';
+import { CalendarDays, ClipboardList, Plus, Settings, Users } from 'lucide-react';
 
-export type AdminTab = 'today' | 'slots' | 'members' | 'new';
+export type AdminTab = 'today' | 'slots' | 'members' | 'settings' | 'new';
 
 type Props = { current: AdminTab; variant?: 'bottom' | 'top' };
 
@@ -9,6 +9,7 @@ const TABS = [
     { key: 'today', label: '今日の予約', short: '今日', to: 'admin.today', Icon: ClipboardList },
     { key: 'slots', label: 'カレンダー', short: 'カレンダー', to: 'admin.slots', Icon: CalendarDays },
     { key: 'members', label: '生徒', short: '生徒', to: 'admin.members', Icon: Users },
+    { key: 'settings', label: '設定', short: '設定', to: 'admin.settings', Icon: Settings },
 ] as const;
 
 /** スタッフ画面のナビ。PC はヘッダーの中（top）、スマホは画面の下（bottom） */
@@ -43,7 +44,7 @@ export default function AdminTabs({ current, variant = 'bottom' }: Props) {
         );
     }
     return (
-        <nav className="border-line grid grid-cols-3 border-t bg-white">
+        <nav className="border-line grid grid-cols-4 border-t bg-white">
             {TABS.map(({ key, short, to, Icon }) => (
                 <Link
                     key={key}

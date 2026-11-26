@@ -13,6 +13,7 @@ export const {
     cancelByToken,
     cancelByStaff,
     resolveRefund,
+    updateSettings,
     requestMemberLogin,
     confirmMemberLogin,
 } = httpActions;
