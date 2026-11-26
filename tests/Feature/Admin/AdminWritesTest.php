@@ -103,14 +103,14 @@ class AdminWritesTest extends TestCase
     public function test_キャンセル_Web_の体験は返金額を記録_当日払いは0_二度目は不可(): void
     {
         $slot = Slot::factory()->weekend('2026-11-21')->create(); // 今日 11/20 の前日 → 50%
-        $web = Reservation::factory()->for($slot)->create(['party_size' => 2, 'amount' => 9000]);
+        $web = Reservation::factory()->for($slot)->create(['party_size' => 2, 'amount' => 9000, 'stripe_payment_intent_id' => 'pi_test']);
         $phone = Reservation::factory()->for($slot)->create(['channel' => Channel::Phone]);
 
         $this->actingAs($this->staff)->from('/admin?date=2026-11-21')->post("/admin/reservations/{$web->id}/cancel", ['reason' => 'customer'])->assertRedirect('/admin?date=2026-11-21');
         $web->refresh();
         $this->assertSame(ReservationStatus::Canceled, $web->status);
         $this->assertSame(4500, $web->refunded_amount);
-        $this->assertSame(RefundStatus::Pending, $web->refund_status); // Stripe につなぐまでは記録だけ
+        $this->assertSame(RefundStatus::Succeeded, $web->refund_status); // 決済の窓口（テストでは偽物）で返金
 
         $this->actingAs($this->staff)->post("/admin/reservations/{$phone->id}/cancel", ['reason' => 'shop']);
         $this->assertSame(0, $phone->fresh()->refunded_amount);

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\CancelController;
 use App\Http\Controllers\Dev;
 use App\Http\Controllers\Member;
 use App\Http\Controllers\ReserveController;
@@ -26,9 +27,9 @@ Route::post('/reserve', [ReserveController::class, 'store'])->middleware('thrott
 Route::get('/reserve/complete/{code}', [ReserveController::class, 'complete'])->name('reserve.complete'); // 署名付き
 Route::get('/reserve/abandon/{code}', [ReserveController::class, 'abandon'])->name('reserve.abandon'); // 署名付き・払わずに戻った
 
-Route::get('/r/{token}/cancel', fn (string $token) => Inertia::render('reserve/cancel', [
-    'token' => $token,
-]))->name('reserve.cancel');
+// キャンセル用リンク（予約確認メールに入る）
+Route::get('/r/{token}/cancel', [CancelController::class, 'show'])->name('reserve.cancel');
+Route::post('/r/{token}/cancel', [CancelController::class, 'store'])->middleware('throttle:10,10')->name('reserve.cancel.store');
 
 // 生徒さんのログイン（メールのリンク）
 Route::prefix('member/login')->name('member.login')->group(function () {
