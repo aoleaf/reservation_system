@@ -52,16 +52,14 @@ Route::prefix('member/login')->name('member.login')->group(function () {
     Route::post('/{token}', [Member\LoginController::class, 'consume'])->middleware('throttle:20,10')->name('.consume');
 });
 
-// 生徒さん
-Route::get('/member', fn () => Inertia::render('member/index'))->name('member.index');
-
-Route::get('/member/schedule/{month}', fn (string $month) => Inertia::render('member/schedule', [
-    'month' => $month,
-]))->name('member.schedule');
-
-Route::get('/member/change/{id}', fn (string $id) => Inertia::render('member/change', [
-    'reservationId' => $id,
-]))->name('member.change');
+// 生徒さん（メールのリンクでログインした生徒さんだけ）。props はコントローラーが作る
+Route::middleware('member')->prefix('member')->name('member.')->group(function () {
+    Route::get('/', [Member\MemberController::class, 'index'])->name('index');
+    Route::get('/schedule/{month}', [Member\MemberController::class, 'schedule'])->name('schedule');
+    Route::post('/schedule/{month}', [Member\MemberController::class, 'submit'])->name('schedule.store');
+    Route::get('/change/{id}', [Member\MemberController::class, 'change'])->name('change');
+    Route::post('/change/{reservation}', [Member\MemberController::class, 'changeStore'])->name('change.store');
+});
 
 // スタッフ（ログインしたスタッフだけ）。props はコントローラーが作る（types/pages.ts と同じ形）
 Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
