@@ -18,7 +18,7 @@ class LineMessagingApi implements LineMessenger
     public function push(string $to, string $text, string $retryKey): void
     {
         $res = Http::withToken($this->token)
-            ->withHeaders(['X-Line-Retry-Key' => $retryKey])
+            ->withHeaders(['X-Line-Retry-Key' => self::uuidFrom($retryKey)])
             ->timeout(10)
             ->post(self::PUSH_URL, ['to' => $to, 'messages' => [['type' => 'text', 'text' => mb_substr($text, 0, self::MAX_TEXT)]]]);
 
@@ -26,6 +26,14 @@ class LineMessagingApi implements LineMessenger
         if ($res->failed() && $res->status() !== 409) {
             throw new RuntimeException("LINE に送れませんでした（{$res->status()}）：".$res->body());
         }
+    }
+
+    /** やり直しのキーは UUID の形でないといけないので、文字列から決まった UUID を作る（同じ文字列なら同じ UUID） */
+    public static function uuidFrom(string $key): string
+    {
+        $h = md5($key);
+
+        return sprintf('%s-%s-%s-%s-%s', substr($h, 0, 8), substr($h, 8, 4), substr($h, 12, 4), substr($h, 16, 4), substr($h, 20, 12));
     }
 
     public function verifySignature(string $body, ?string $signature): bool

@@ -17,7 +17,8 @@ class LineMessagingApiTest extends TestCase
         (new LineMessagingApi('token-x', 'secret'))->push('Cgroup', 'こんにちは', 'key-1');
         Http::assertSent(fn (Request $r) => $r->url() === 'https://api.line.me/v2/bot/message/push'
             && $r->hasHeader('Authorization', 'Bearer token-x')
-            && $r->hasHeader('X-Line-Retry-Key', 'key-1')
+            && $r->hasHeader('X-Line-Retry-Key', LineMessagingApi::uuidFrom('key-1'))
+            && (bool) preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', LineMessagingApi::uuidFrom('key-1'))
             && $r['to'] === 'Cgroup' && $r['messages'][0]['text'] === 'こんにちは');
     }
 
