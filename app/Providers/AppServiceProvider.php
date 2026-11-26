@@ -13,6 +13,19 @@ class AppServiceProvider extends ServiceProvider
     {
         // 返金：Stripe につなぐまでは記録だけ（PR 4 で Stripe の実装に差し替える）
         $this->app->bind(\App\Services\Booking\RefundGateway::class, \App\Services\Booking\PendingRefundGateway::class);
+
+        // 決済：Stripe のキーがあれば本物、無ければ開発用の偽物（本番でキーが無いのは設定の誤りなので止める）
+        $this->app->singleton(\App\Services\Payments\PaymentGateway::class, function ($app) {
+            $secret = config('services.stripe.secret');
+            if ($secret) {
+                return new \App\Services\Payments\StripePaymentGateway($secret, (string) config('services.stripe.webhook_secret'));
+            }
+            if ($app->isProduction()) {
+                throw new \RuntimeException('STRIPE_SECRET が設定されていません');
+            }
+
+            return new \App\Services\Payments\FakePaymentGateway;
+        });
     }
 
     /**
