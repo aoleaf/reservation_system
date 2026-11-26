@@ -1,11 +1,11 @@
 // 画面名 → props を作る builder の表。builder は純粋関数にする。
 // 本番ではコントローラーがこの役目を引き継ぎ、types/pages.ts と同じ形の props を返す。
 // selectors を呼んでよいのはここと mocks/actions.ts だけ。
-import type { Channel, Reservation, ReservationKind, Settings, Slot } from '@/types/models';
-import type { AvailabilityMark, AdminEntry, AdminMemberShowProps, AdminSlotCell, AdminMembersProps, AdminReservationNewProps, AdminSlotsProps, AdminTodayProps, PaymentKind, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
-import { addDays, datesInMonth, dayLabel, isISODate, isMonth, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
+import type { ReservationKind, Settings, Slot } from '@/types/models';
+import type { AvailabilityMark, CalendarDay, MemberChangeProps, MemberIndexProps, MemberScheduleProps, PickDay, ReserveCancelProps, ReserveCompleteProps, ReserveConfirmProps, ReserveFormProps, ReserveIndexProps, SlotView } from '@/types/pages';
+import { addDays, datesInMonth, dayLabel, isMonth, monthLabel, monthOf, shiftMonth, weekdayIndex, weekdayJa } from './dates';
 import type { MockData } from './seed';
-import { canBook, changeRemaining, isActive, isPrepaid, memberSessions, refundAmount, remaining, scheduleWindow, seatsUsed } from './selectors';
+import { canBook, changeRemaining, isActive, memberSessions, refundAmount, remaining, scheduleWindow, seatsUsed } from './selectors';
 
 export type ServerProps = Record<string, unknown>;
 export type Builder = (state: MockData, serverProps: ServerProps) => object;
@@ -173,66 +173,9 @@ const reserveCancel: Builder = (s, sp): ReserveCancelProps => {
     };
 };
 
-// ---- スタッフ：月カレンダー ----
+// ---- 共通：カレンダーの1日 ----
 
 const calendarDay = (date: string, today: string): CalendarDay => ({ date, day: Number(date.slice(8, 10)), weekdayIndex: weekdayIndex(date), isToday: date === today });
-
-/** 埋まり具合の濃さ：0 席=0、1〜2 席=1、3〜4 席=2、5 席=3、満席=4（定員 6 のとき） */
-const fillOf = (used: number, capacity: number): AdminSlotCell['fill'] => {
-    if (used <= 0) return 0;
-    if (used >= capacity) return 4;
-    return Math.min(3, Math.ceil((used / capacity) * 3)) as 1 | 2 | 3;
-};
-
-/** カレンダーの1枠（帯の内訳・印・お休みにできるか） */
-function adminSlotCell(s: MockData, x: Slot): AdminSlotCell {
-    const v = slotView(x, s, 'monthly');
-    const usedTotal = v.used.monthly + v.used.trial;
-    const reservationCount = s.reservations.filter((r) => r.slotId === x.id && isActive(r)).length;
-    const monthlyFull = x.monthlyLimit !== null && v.used.monthly >= x.monthlyLimit;
-    const free = Math.max(0, x.capacity - usedTotal);
-    return {
-        ...v,
-        usedTotal,
-        fill: fillOf(usedTotal, x.capacity),
-        trialOnlyFree: x.status === 'open' && x.trialOpen && monthlyFull ? free : 0,
-        mark: x.status === 'closed' ? null : free === 0 ? 'full' : monthlyFull ? 'monthlyFull' : null,
-        reservationCount,
-        canClose: reservationCount === 0,
-    };
-}
-
-const adminSlots: Builder = (s, sp): AdminSlotsProps => {
-    const month = isMonth(sp.month) ? sp.month : monthOf(s.today);
-    const months = [month, shiftMonth(month, 1)].map((m) => {
-        const dates = datesInMonth(m);
-        return {
-            month: m,
-            label: monthLabel(m),
-            leadingBlanks: weekdayIndex(dates[0]),
-            days: dates.map((date) => {
-                const slots = s.slots.filter((x) => x.date === date).map((x) => adminSlotCell(s, x));
-                return { ...calendarDay(date, s.today), label: dayLabel(date), closed: slots.length > 0 && slots.every((x) => x.status === 'closed'), slots };
-            }),
-        };
-    });
-    const date = isISODate(sp.date) ? sp.date : null;
-    const daySlots = date ? s.slots.filter((x) => x.date === date) : [];
-    return {
-        month,
-        prevMonth: shiftMonth(month, -1),
-        nextMonth: shiftMonth(month, 1),
-        months,
-        selected: date
-            ? {
-                  date,
-                  label: dayLabel(date),
-                  slots: daySlots.map((x) => ({ ...adminSlotCell(s, x), entries: entriesOf(s, x) })),
-                  dayAction: daySlots.some((x) => x.status === 'open') ? 'pause' : daySlots.some((x) => x.status === 'paused') ? 'resume' : null,
-              }
-            : null,
-    };
-};
 
 // ---- 生徒さん ----
 
@@ -336,151 +279,12 @@ const memberChange: Builder = (s, sp): MemberChangeProps => {
     };
 };
 
-// ---- スタッフ：今日の一覧・予約入力・生徒一覧 ----
-
-const CHANNEL_LABEL: Record<Channel, string> = { web: 'Web', phone: '電話', dm: 'DM', walkin: '来店', member: '生徒', staff: 'スタッフ' };
-
-/** 支払いの色分け：月謝は monthly、体験の web は支払済、それ以外の体験は当日払い */
-const paymentOf = (r: Reservation): PaymentKind => (r.kind === 'monthly' ? 'monthly' : isPrepaid(r) ? 'paid' : 'onsite');
-
-/** スタッフがキャンセルしたときの返金額と説明（返金の計算はお客様のキャンセルと同じ） */
-function staffCancelOf(s: MockData, r: Reservation, slot: Slot): { refund: number; note: string } {
-    if (r.kind === 'monthly') return { refund: 0, note: '月謝の回をキャンセルします（返金はありません）。別の日に入れるときは、予約の入力から入れてください' };
-    if (!isPrepaid(r)) return { refund: 0, note: '当日払いのため、返金はありません' };
-    const refund = refundAmount(r.amount, slot.date, s.today, s.settings.stripeRate);
-    const when = slot.date >= addDays(s.today, 2) ? '2日前まで（決済手数料を引いて返金）' : slot.date === addDays(s.today, 1) ? '前日（50%を返金）' : '当日以降（返金なし）';
-    return { refund, note: `お支払い ${r.amount.toLocaleString('ja-JP')}円・${when}` };
-}
-
-/** 1枠に入っている予約（月謝が先、同じ種類は申し込み順） */
-function entriesOf(s: MockData, slot: Slot): AdminEntry[] {
-    const members = new Map(s.members.map((m) => [m.id, m]));
-    return s.reservations
-        .filter((r) => r.slotId === slot.id && isActive(r))
-        .sort((a, b) => (a.kind === b.kind ? a.createdAt.localeCompare(b.createdAt) : a.kind === 'monthly' ? -1 : 1))
-        .map((r) => ({
-            id: r.id,
-            name: (r.memberId ? members.get(r.memberId)?.name : r.contact?.name) ?? '（名前なし）',
-            phone: (r.memberId ? members.get(r.memberId)?.phone : r.contact?.phone) || null,
-            cancel: staffCancelOf(s, r, slot),
-            kind: r.kind,
-            partySize: r.partySize,
-            payment: paymentOf(r),
-            channel: r.channel,
-            channelLabel: CHANNEL_LABEL[r.channel],
-        }));
-}
-
-const dateParam = (s: MockData, v: unknown) => (isISODate(v) ? v : s.today);
-
-const adminToday: Builder = (s, sp): AdminTodayProps => {
-    const date = dateParam(s, sp.date);
-    const raw = s.slots.filter((x) => x.date === date);
-    return {
-        date,
-        label: dayLabel(date),
-        isToday: date === s.today,
-        prevDate: addDays(date, -1),
-        nextDate: addDays(date, 1),
-        closed: raw.length > 0 && raw.every((x) => x.status === 'closed'),
-        slots: raw.map((slot) => ({
-            slot: slotView(slot, s, 'trial'),
-            add: slot.status !== 'open'
-                ? null
-                : remaining(slot, s.reservations, 'trial') > 0
-                  ? { kind: 'trial' as const, remaining: remaining(slot, s.reservations, 'trial') }
-                  : remaining(slot, s.reservations, 'monthly') > 0
-                    ? { kind: 'monthly' as const, remaining: remaining(slot, s.reservations, 'monthly') }
-                    : null,
-            entries: entriesOf(s, slot),
-        })),
-    };
-};
-
-const adminReservationNew: Builder = (s, sp): AdminReservationNewProps => {
-    const kind: ReservationKind = str(sp.kind) === 'monthly' ? 'monthly' : 'trial';
-    const date = dateParam(s, sp.date);
-    const month = monthOf(date);
-    const raw = s.slots.filter((x) => x.date === date);
-    const slots = raw.map((x) => slotView(x, s, kind));
-    const dateOptions = [...new Set(s.slots.filter((x) => x.date >= s.today && x.status !== 'closed' && (kind === 'monthly' || x.trialOpen)).map((x) => x.date))]
-        .slice(0, kind === 'monthly' ? 21 : 12)
-        .map((d) => ({ date: d, label: dayLabel(d) }));
-    let dateNote: string | null = null;
-    if (raw.length === 0) dateNote = 'この日は枠がありません';
-    else if (raw.every((x) => x.status === 'closed')) dateNote = 'この日はお休みです';
-    else if (kind === 'trial' && !raw.some((x) => x.trialOpen)) dateNote = '体験レッスンは土曜・日曜だけです。上から日を選んでください';
-    const wanted = slots.find((x) => x.id === str(sp.slotId) && x.bookable);
-    const members =
-        kind === 'monthly'
-            ? s.members.map((m) => {
-                  const sessions = memberSessions(m.id, month, s.reservations, s.slots);
-                  return { id: m.id, name: m.name, count: sessions.length, dates: sessions.map((x) => x.slot.date) };
-              })
-            : [];
-    return {
-        kind,
-        monthLabel: monthLabel(month),
-        required: s.settings.sessionsPerMonth,
-        members,
-        initialMemberId: members.find((m) => m.id === str(sp.member))?.id ?? null,
-        date,
-        label: dayLabel(date),
-        dateNote,
-        dateOptions,
-        slots,
-        initialSlotId: wanted?.id ?? null,
-        channels: [
-            { value: 'phone', label: '電話' },
-            { value: 'dm', label: 'DM' },
-            { value: 'walkin', label: '来店（口頭）' },
-        ],
-    };
-};
-
-const adminMembers: Builder = (s, sp): AdminMembersProps => {
-    const month = shiftMonth(monthOf(s.today), 1);
-    const filter = str(sp.filter) === 'unsubmitted' ? 'unsubmitted' : 'all';
-    const all = s.members.map((m) => ({ id: m.id, name: m.name, phone: m.phone, submitted: Boolean(memberMonthOf(s, m.id, month)?.submittedAt) }));
-    const unsubmitted = all.filter((m) => !m.submitted);
-    return {
-        month,
-        monthLabel: monthLabel(month),
-        filter,
-        counts: { all: all.length, unsubmitted: unsubmitted.length },
-        members: filter === 'unsubmitted' ? unsubmitted : all,
-    };
-};
-
-const adminMemberShow: Builder = (s, sp): AdminMemberShowProps => {
-    const m = s.members.find((x) => x.id === str(sp.memberId));
-    const thisMonth = monthOf(s.today);
-    return {
-        member: m ? { id: m.id, name: m.name, phone: m.phone, email: m.email } : null,
-        months: !m
-            ? []
-            : [thisMonth, shiftMonth(thisMonth, 1)].map((month) => {
-                  const mm = memberMonthOf(s, m.id, month);
-                  return {
-                      month,
-                      label: monthLabel(month),
-                      submitted: Boolean(mm?.submittedAt),
-                      changeRemaining: changeRemaining(mm),
-                      sessions: memberSessions(m.id, month, s.reservations, s.slots).map((x) => slotLabelOf(x.slot)),
-                  };
-              }),
-    };
-};
+// スタッフの画面（admin/*）は BE のコントローラーが props を作る（app/Http/Controllers/Admin）
 
 export const builders: Record<string, Builder> = {
-    'admin/today': adminToday,
-    'admin/reservation-new': adminReservationNew,
-    'admin/members': adminMembers,
-    'admin/member-show': adminMemberShow,
     'member/index': memberIndex,
     'member/schedule': memberSchedule,
     'member/change': memberChange,
-    'admin/slots': adminSlots,
     'reserve/index': reserveIndex,
     'reserve/form': reserveForm,
     'reserve/confirm': reserveConfirm,

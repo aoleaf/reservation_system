@@ -144,14 +144,15 @@ export const mockActions: Actions = {
         cb?.onFinish?.();
     },
 
-    cancelByStaff({ reservationId }, cb) {
+    // スタッフの画面は BE に移した（lib/actions/index.ts の ON_SERVER）。モック版は理由に合わせて全額／規定どおりで返金する
+    cancelByStaff({ reservationId, reason }, cb) {
         const s = st();
         const r = s.reservations.find((x) => x.id === reservationId);
         const slot = r && s.slots.find((x) => x.id === r.slotId);
         if (!r || !slot) return fail(cb, { reservationId: '予約が見つかりません' });
         if (!isActive(r)) return fail(cb, { reservationId: 'この予約はキャンセル済みです' });
         // 返金はお客様のキャンセルと同じ計算。支払済（Web の体験）だけが対象
-        const refunded = isPrepaid(r) ? refundAmount(r.amount, slot.date, s.today, s.settings.stripeRate) : 0;
+        const refunded = !isPrepaid(r) ? 0 : reason === 'shop' ? r.amount : refundAmount(r.amount, slot.date, s.today, s.settings.stripeRate);
         s.updateReservation(r.id, { status: 'canceled', refundedAmount: refunded });
         cb?.onFinish?.();
     },

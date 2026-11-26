@@ -1,5 +1,6 @@
 // 書き込みのインターフェース。画面は '@/lib/actions' からだけ書き込む。本番でも残す。
 import type { Contact, ISODate, SlotId, SlotStatus } from '@/types/models';
+import type { CancelReason } from '@/types/pages';
 
 export type Callbacks = {
     onError?: (errors: Record<string, string>) => void;
@@ -18,7 +19,7 @@ export type SetSlotStatusInput = { slotId: SlotId; status: SlotStatus };
 export type SetDayStatusInput = { date: ISODate; status: 'open' | 'paused' };
 export type CancelByTokenInput = { token: string };
 /** スタッフのキャンセル入力（電話でのキャンセル、お店都合でお願いしたとき） */
-export type CancelByStaffInput = { reservationId: string };
+export type CancelByStaffInput = { reservationId: string; reason: CancelReason };
 
 export type Actions = {
     createWebReservation: (input: CreateWebReservationInput, cb?: Callbacks) => void;

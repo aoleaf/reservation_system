@@ -1,19 +1,24 @@
 import { cancelByStaff } from '@/lib/actions';
 import { yen } from '@/lib/format';
-import type { AdminEntry } from '@/types/pages';
+import type { AdminEntry, CancelReason } from '@/types/pages';
 import { Phone } from 'lucide-react';
 import { useState } from 'react';
 import StatusBadge from './status-badge';
+
+const REASONS: { reason: CancelReason; label: string }[] = [
+    { reason: 'customer', label: 'お客様の都合でキャンセル' },
+    { reason: 'shop', label: 'お店の都合でキャンセル（全額返金）' },
+];
 
 /** 1枠に入っている予約の一覧。各行から電話番号と返金額を確かめて、キャンセルを入力できる（予約一覧とカレンダーのパネルで使う） */
 export default function ReservationEntries({ entries }: { entries: AdminEntry[] }) {
     const [canceling, setCanceling] = useState<string | null>(null);
     const [error, setError] = useState<{ id: string; message: string } | null>(null);
 
-    const cancel = (reservationId: string) => {
+    const cancel = (reservationId: string, reason: CancelReason) => {
         setError(null);
         cancelByStaff(
-            { reservationId },
+            { reservationId, reason },
             { onError: (e) => setError({ id: reservationId, message: Object.values(e)[0] }), onFinish: () => setCanceling(null) },
         );
     };
@@ -50,17 +55,24 @@ export default function ReservationEntries({ entries }: { entries: AdminEntry[] 
                                     </a>
                                 </p>
                             )}
-                            <p className="mt-1">
-                                返金 <span className="font-bold">{yen(e.cancel.refund)}</span>（{e.cancel.note}）
-                            </p>
-                            <div className="mt-2 flex gap-2">
-                                <button type="button" onClick={() => cancel(e.id)} className="bg-alert rounded px-3 py-1 font-bold text-white">
-                                    キャンセルを登録
-                                </button>
-                                <button type="button" onClick={() => setCanceling(null)} className="rounded border bg-white px-3 py-1">
-                                    戻る
-                                </button>
+                            <p className="text-ink-soft mt-1">どちらの都合かを選んで登録します</p>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                {REASONS.map(({ reason, label }) => (
+                                    <button
+                                        key={reason}
+                                        type="button"
+                                        onClick={() => cancel(e.id, reason)}
+                                        className="border-alert/40 hover:bg-alert rounded border bg-white px-2 py-1.5 text-left hover:text-white"
+                                    >
+                                        <span className="block font-bold">{label}</span>
+                                        <span className="block">返金 {yen(e.cancel[reason].refund)}</span>
+                                        <span className="block text-[11px] opacity-80">{e.cancel[reason].note}</span>
+                                    </button>
+                                ))}
                             </div>
+                            <button type="button" onClick={() => setCanceling(null)} className="mt-2 rounded border bg-white px-3 py-1">
+                                戻る
+                            </button>
                         </div>
                     )}
                     {error?.id === e.id && (
