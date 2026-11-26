@@ -28,6 +28,8 @@ export type AvailabilityMark = 'ok' | 'few' | 'full' | 'none';
 export type ReserveIndexProps = {
     unitPrice: number;
     note: string;
+    /** お知らせ（支払いを中止して戻ってきたときなど） */
+    notice: string | null;
     month: string;
     monthLabel: string;
     /** 前後の月へ移れないときは null */
@@ -63,7 +65,10 @@ export type ReserveConfirmProps = {
 };
 
 export type ReserveCompleteProps = {
+    /** 署名付きの URL（決済から戻ったとき）でだけ入る。無ければ「予約確認メールをご覧ください」 */
     reservation: { id: string; partySize: number; amount: number; contact: Contact } | null;
+    /** pending＝支払いの確認中（通知を待っている）／confirmed＝確定／expired＝期限切れで席を戻した */
+    paymentStatus: 'pending' | 'confirmed' | 'expired' | null;
     slotLabel: string;
     cancelPolicy: string[];
     /** キャンセルの案内（リンクは確認メールで送るので、画面には出さない） */

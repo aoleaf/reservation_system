@@ -82,7 +82,7 @@ export default function ReserveConfirm({ slot, slotLabel, partySize, contact, un
             <button type="button" onClick={pay} disabled={busy || contactError !== null} className="bg-brand mt-6 block w-full rounded-lg py-3 font-bold text-white disabled:opacity-60">
                 {yen(amount)} を支払う
             </button>
-            <p className="text-ink-soft mt-2 text-center text-xs">確認用の画面のため、実際の支払いは行われません</p>
+            <p className="text-ink-soft mt-2 text-center text-xs">次の画面（Stripe）で、カード情報を入力してお支払いください</p>
             <Link href={back} className="text-brand mt-4 block text-center text-sm underline">
                 入力内容を直す
             </Link>
