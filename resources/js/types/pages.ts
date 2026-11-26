@@ -112,7 +112,12 @@ export type AdminEntry = {
 /** キャンセルの理由。お店の都合（お休みにするためにお願いした等）は全額返金 */
 export type CancelReason = 'customer' | 'shop';
 
+/** 返金に失敗した予約（スタッフが手で返金する） */
+export type RefundIssue = { id: string; code: string; name: string; phone: string | null; slotLabel: string; amount: number };
+
 export type AdminTodayProps = {
+    /** 返金に失敗した予約（日付を問わず）。空なら出さない */
+    refundIssues: RefundIssue[];
     date: ISODate;
     label: string;
     isToday: boolean;

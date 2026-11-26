@@ -53,6 +53,7 @@ Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/reservations/new', [Admin\ReservationController::class, 'create'])->name('reservations.new');
     Route::post('/reservations', [Admin\ReservationController::class, 'store'])->name('reservations.store');
     Route::post('/reservations/{reservation}/cancel', [Admin\ReservationController::class, 'cancel'])->name('reservations.cancel');
+    Route::post('/reservations/{reservation}/refund-resolved', [Admin\ReservationController::class, 'refundResolved'])->name('reservations.refund-resolved');
     Route::get('/slots', [Admin\SlotController::class, 'index'])->name('slots');
     Route::patch('/slots/{slot}', [Admin\SlotController::class, 'update'])->name('slots.update');
     Route::patch('/days/{date}', [Admin\SlotController::class, 'updateDay'])->name('days.update');

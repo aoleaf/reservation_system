@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domain\Booking\Seats;
 use App\Enums\ReservationKind;
+use App\Enums\RefundStatus;
 use App\Enums\SlotStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Presenters\BookingPresenter;
+use App\Models\Reservation;
 use App\Models\Slot;
 use App\Support\JaDate;
 use Illuminate\Http\Request;
@@ -29,6 +31,7 @@ class TodayController extends Controller
             'prevDate' => JaDate::addDays($date, -1),
             'nextDate' => JaDate::addDays($date, 1),
             'closed' => $slots->isNotEmpty() && $slots->every(fn (Slot $s) => $s->status === SlotStatus::Closed),
+            'refundIssues' => $this->refundIssues($p),
             'slots' => $slots->map(fn (Slot $slot) => [
                 'slot' => $p->slotView($slot, ReservationKind::Trial),
                 'add' => $this->addLink($slot, $p),
@@ -51,5 +54,24 @@ class TodayController extends Controller
         }
 
         return null;
+    }
+
+    /** 返金に失敗した予約（日付を問わず）。スタッフが手で返金して「返金した」を押すまで出す */
+    private function refundIssues(BookingPresenter $p): array
+    {
+        return Reservation::query()
+            ->where('refund_status', RefundStatus::Failed)
+            ->with('slot')
+            ->orderBy('canceled_at')
+            ->get()
+            ->map(fn (Reservation $r) => [
+                'id' => (string) $r->id,
+                'code' => $r->code,
+                'name' => (string) $r->contact_name,
+                'phone' => $r->contact_phone,
+                'slotLabel' => $p->slotLabel($r->slot),
+                'amount' => (int) $r->refunded_amount,
+            ])
+            ->all();
     }
 }

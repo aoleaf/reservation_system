@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\CancelReason;
+use App\Enums\RefundStatus;
 use App\Enums\ReservationKind;
 use App\Enums\SlotStatus;
 use App\Http\Controllers\Controller;
@@ -111,6 +112,17 @@ class ReservationController extends Controller
             ['reason.*' => 'お客様の都合か、お店の都合かを選んでください'],
         );
         $service->cancelByStaff($reservation, CancelReason::from($data['reason']));
+
+        return back();
+    }
+
+    /** 返金に失敗した予約を、手で返金したことにする */
+    public function refundResolved(Reservation $reservation): RedirectResponse
+    {
+        if ($reservation->refund_status !== RefundStatus::Failed) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['reservationId' => 'この予約は返金の失敗ではありません']);
+        }
+        $reservation->update(['refund_status' => RefundStatus::Manual]);
 
         return back();
     }
