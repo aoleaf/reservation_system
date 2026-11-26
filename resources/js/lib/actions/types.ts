@@ -36,6 +36,8 @@ export type Actions = {
     cancelByStaff: (input: CancelByStaffInput, cb?: Callbacks) => void;
     resolveRefund: (input: ResolveRefundInput, cb?: Callbacks) => void;
     updateSettings: (input: UpdateSettingsInput, cb?: Callbacks) => void;
+    chooseLineGroup: (input: Record<string, never>, cb?: Callbacks) => void;
+    testLine: (input: Record<string, never>, cb?: Callbacks) => void;
     requestMemberLogin: (input: RequestMemberLoginInput, cb?: Callbacks) => void;
     confirmMemberLogin: (input: ConfirmMemberLoginInput, cb?: Callbacks) => void;
 };
