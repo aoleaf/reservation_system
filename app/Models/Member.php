@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ReservationKind;
 use App\Enums\ReservationStatus;
+use App\Support\MemberNumber;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,14 @@ class Member extends Model
     protected function casts(): array
     {
         return ['active' => 'boolean'];
+    }
+
+    /** 会員番号を書かずに作ったときは、次の番号を振る */
+    protected static function booted(): void
+    {
+        static::creating(function (Member $m) {
+            $m->member_no ??= MemberNumber::next();
+        });
     }
 
     public function user(): BelongsTo

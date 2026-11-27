@@ -28,7 +28,7 @@ export default function AdminMembers({ monthLabel, filter, counts, members }: Ad
                     {members.map((m) => (
                         <li key={m.id}>
                             <Link href={route('admin.members.show', m.id)} className="flex items-center gap-2 px-3 py-2.5 text-sm">
-                                <span className="text-ink-soft w-8 text-xs tabular-nums">{m.id}</span>
+                                <span className="text-ink-soft w-12 text-xs tabular-nums">{m.memberNo}</span>
                                 <span className="min-w-0 flex-1 truncate">{m.name}</span>
                                 <span className="text-ink-soft hidden w-36 text-xs tabular-nums md:block">{m.phone}</span>
                                 <StatusBadge kind={m.submitted ? 'submitted' : 'unsubmitted'} />

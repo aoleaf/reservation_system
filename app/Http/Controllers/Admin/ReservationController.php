@@ -16,6 +16,7 @@ use App\Services\Booking\CancellationService;
 use App\Services\Booking\StaffReservationService;
 use App\Support\ContactFormat;
 use App\Support\JaDate;
+use App\Support\MemberNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -53,10 +54,10 @@ class ReservationController extends Controller
         }
 
         $members = $kind === ReservationKind::Monthly
-            ? Member::query()->where('active', true)->orderBy('id')->get()->map(function (Member $m) use ($month) {
+            ? Member::query()->where('active', true)->get()->sortBy(fn (Member $m) => MemberNumber::value($m->member_no))->values()->map(function (Member $m) use ($month) {
                 $sessions = $m->sessionsIn($month);
 
-                return ['id' => (string) $m->id, 'name' => $m->name, 'count' => $sessions->count(), 'dates' => $sessions->map(fn (Reservation $r) => $r->slot->dateString())->all()];
+                return ['id' => (string) $m->id, 'memberNo' => $m->member_no, 'name' => $m->name, 'count' => $sessions->count(), 'dates' => $sessions->map(fn (Reservation $r) => $r->slot->dateString())->all()];
             })->all()
             : [];
         $wanted = $slots->first(fn ($s) => $s['id'] === (string) $request->query('slotId', $request->query('slot')) && $s['bookable']);

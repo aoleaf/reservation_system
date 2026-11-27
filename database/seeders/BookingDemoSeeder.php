@@ -68,6 +68,7 @@ class BookingDemoSeeder extends Seeder
         for ($i = 0; $i < 40; $i++) {
             $id = sprintf('m%02d', $i + 1);
             $members[$id] = [
+                'member_no' => sprintf('T%03d', $i + 1),
                 'name' => self::SURNAMES[$i % 20].' '.self::GIVEN[($i * 3 + intdiv($i, 20) * 7) % 20],
                 'phone' => $this->phone(),
                 'email' => "$id@example.com",

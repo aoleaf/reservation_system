@@ -8,6 +8,7 @@ use App\Models\Member;
 use App\Models\MemberMonth;
 use App\Models\Reservation;
 use App\Support\JaDate;
+use App\Support\MemberNumber;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,8 +23,9 @@ class MemberController extends Controller
         $filter = $request->query('filter') === 'unsubmitted' ? 'unsubmitted' : 'all';
         $submitted = MemberMonth::query()->where('month', $month)->whereNotNull('submitted_at')->pluck('member_id')->flip();
 
-        $all = Member::query()->where('active', true)->orderBy('id')->get()
-            ->map(fn (Member $m) => ['id' => (string) $m->id, 'name' => $m->name, 'phone' => $m->phone, 'submitted' => $submitted->has($m->id)]);
+        $all = Member::query()->where('active', true)->get()
+            ->sortBy(fn (Member $m) => MemberNumber::value($m->member_no))->values() // T999 の次の T1000 も順番どおりに
+            ->map(fn (Member $m) => ['id' => (string) $m->id, 'memberNo' => $m->member_no, 'name' => $m->name, 'phone' => $m->phone, 'submitted' => $submitted->has($m->id)]);
         $unsubmitted = $all->reject(fn ($m) => $m['submitted'])->values();
 
         return Inertia::render('admin/members', [
@@ -42,7 +44,7 @@ class MemberController extends Controller
         $thisMonth = JaDate::monthOf($p->today());
 
         return Inertia::render('admin/member-show', [
-            'member' => $m ? ['id' => (string) $m->id, 'name' => $m->name, 'phone' => $m->phone, 'email' => $m->email] : null,
+            'member' => $m ? ['id' => (string) $m->id, 'memberNo' => $m->member_no, 'name' => $m->name, 'phone' => $m->phone, 'email' => $m->email] : null,
             'months' => ! $m ? [] : array_map(function (string $month) use ($m, $p) {
                 $mm = $m->monthOf($month);
 
