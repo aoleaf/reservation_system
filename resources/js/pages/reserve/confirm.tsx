@@ -7,7 +7,7 @@ import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
 /** 内容・金額・キャンセル規定の確認。「支払う」で予約を作る */
-export default function ReserveConfirm({ slot, slotLabel, partySize, contact, unitPrice, amount, cancelPolicy, cancelGuide, contactError }: ReserveConfirmProps) {
+export default function ReserveConfirm({ slot, slotLabel, partySize, contact, unitPrice, amount, cancelPolicy }: ReserveConfirmProps) {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
 
@@ -36,6 +36,7 @@ export default function ReserveConfirm({ slot, slotLabel, partySize, contact, un
                     ['お名前', contact.name],
                     ['電話番号', contact.phone],
                     ['メール', contact.email || '—'],
+                    ['単価', yen(unitPrice)],
                 ].map(([k, v]) => (
                     <div key={k} className="flex gap-3 px-3 py-2.5">
                         <dt className="text-ink-soft w-20 shrink-0">{k}</dt>
@@ -44,12 +45,7 @@ export default function ReserveConfirm({ slot, slotLabel, partySize, contact, un
                 ))}
                 <div className="flex items-baseline gap-3 px-3 py-3">
                     <dt className="text-ink-soft w-20 shrink-0">お支払い</dt>
-                    <dd>
-                        <span className="text-brand text-xl font-bold">{yen(amount)}</span>
-                        <span className="text-ink-soft ml-2 text-sm tabular-nums">
-                            （{yen(unitPrice)} × {partySize}名）
-                        </span>
-                    </dd>
+                    <dd className="text-brand text-xl font-bold">{yen(amount)}</dd>
                 </div>
             </dl>
 
@@ -60,13 +56,7 @@ export default function ReserveConfirm({ slot, slotLabel, partySize, contact, un
                         <li key={p}>{p}</li>
                     ))}
                 </ul>
-                <p className="text-ink-soft mt-2 text-sm">{cancelGuide}</p>
             </section>
-            {contactError && (
-                <p role="alert" className="text-alert mt-5 text-sm font-bold">
-                    {contactError}
-                </p>
-            )}
 
             {errorList.length > 0 && (
                 <div role="alert" className="border-alert/40 bg-alert-soft text-alert mt-5 rounded-lg border p-3 text-sm font-bold">
@@ -79,10 +69,10 @@ export default function ReserveConfirm({ slot, slotLabel, partySize, contact, un
                 </div>
             )}
 
-            <button type="button" onClick={pay} disabled={busy || contactError !== null} className="bg-brand mt-6 block w-full rounded-lg py-3 font-bold text-white disabled:opacity-60">
+            <button type="button" onClick={pay} disabled={busy} className="bg-brand mt-6 block w-full rounded-lg py-3 font-bold text-white disabled:opacity-60">
                 {yen(amount)} を支払う
             </button>
-            <p className="text-ink-soft mt-2 text-center text-xs">次の画面（Stripe）で、カード情報を入力してお支払いください</p>
+            <p className="text-ink-soft mt-2 text-center text-xs">確認用の画面のため、実際の支払いは行われません</p>
             <Link href={back} className="text-brand mt-4 block text-center text-sm underline">
                 入力内容を直す
             </Link>

@@ -7,7 +7,7 @@ import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
 /** キャンセル（返金額は今日の日付で変わる） */
-export default function ReserveCancel({ reservation, slotLabel, token, todayLabel, refund, refundReason, cancelPolicy, shopPhone }: ReserveCancelProps) {
+export default function ReserveCancel({ reservation, slotLabel, token, todayLabel, refund, refundReason, cancelPolicy }: ReserveCancelProps) {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     if (!reservation) {
@@ -68,9 +68,8 @@ export default function ReserveCancel({ reservation, slotLabel, token, todayLabe
                     </button>
                 </>
             )}
-            <p className="text-ink-soft mt-4 text-center text-xs">ご不明な点はお電話（{shopPhone}）でお問い合わせください</p>
             <Link href={route('reserve.index')} className="text-brand mt-4 block text-center text-sm underline">
-                予約のページへ
+                枠の一覧へ
             </Link>
         </MobileShell>
     );

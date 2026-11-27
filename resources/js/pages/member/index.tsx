@@ -4,17 +4,17 @@ import StatusBadge from '@/components/status-badge';
 import type { MemberIndexProps } from '@/types/pages';
 import { Link } from '@inertiajs/react';
 
-/** 生徒のマイページ：今月・来月（受付中なら再来月も）の回と日程変更の残り回数 */
+/** 生徒のマイページ：今月・来月の回と日程変更の残り回数 */
 export default function MemberIndex({ member, months, sessionsPerMonth }: MemberIndexProps) {
     if (!member) {
         return (
-            <MobileShell title="マイページ">
-                <NotFound message="生徒さんの情報が見つかりません" backHref={route('member.login')} backLabel="ログインの画面へ" />
+            <MobileShell title="マイページ" back={route('demo')}>
+                <NotFound message="生徒さんの情報が見つかりません" backHref={route('demo')} backLabel="最初の画面へ" />
             </MobileShell>
         );
     }
     return (
-        <MobileShell title="マイページ">
+        <MobileShell title="マイページ" back={route('demo')}>
             <p className="mb-4">
                 <span className="font-mincho text-lg font-bold">{member.name}</span> さん
             </p>
@@ -34,35 +34,30 @@ export default function MemberIndex({ member, months, sessionsPerMonth }: Member
                                         <span className="min-w-0 flex-1">{x.label}</span>
                                         {x.past ? (
                                             <span className="text-xs">済</span>
+                                        ) : x.canChange ? (
+                                            <Link href={route('member.change', x.reservationId)} className="border-brand text-brand shrink-0 rounded-md border px-2 py-1 text-xs font-bold">
+                                                変更
+                                            </Link>
                                         ) : (
-                                            x.canChange && (
-                                                <Link href={route('member.change', x.reservationId)} className="border-brand text-brand shrink-0 rounded-md border px-2 py-1 text-xs font-bold">
-                                                    変更
-                                                </Link>
-                                            )
+                                            <button type="button" disabled className="border-line text-ink-soft/60 shrink-0 rounded-md border px-2 py-1 text-xs">
+                                                変更
+                                            </button>
                                         )}
                                     </li>
                                 ))}
                             </ol>
                         )}
-                        {!m.submitted && (
-                            <>
-                                {m.canSchedule && (
-                                    <Link href={route('member.schedule', m.month)} className="bg-brand block rounded-lg py-3 text-center font-bold text-white">
-                                        {m.monthLabel}の日程を選ぶ（{sessionsPerMonth}回）
-                                    </Link>
-                                )}
-                                <p className={'mt-2 text-sm ' + (m.canSchedule ? 'text-ink-soft text-center' : 'text-alert font-bold')}>
-                                    {m.scheduleNote ?? 'まだ日程は選べません。'}
-                                </p>
-                            </>
-                        )}
+                        {!m.submitted &&
+                            (m.canSchedule ? (
+                                <Link href={route('member.schedule', m.month)} className="bg-brand block rounded-lg py-3 text-center font-bold text-white">
+                                    来月の日程を選ぶ（{sessionsPerMonth}回）
+                                </Link>
+                            ) : (
+                                <p className="text-ink-soft text-sm">まだ日程は選べません。</p>
+                            ))}
                     </section>
                 ))}
             </div>
-            <Link href={route('logout')} method="post" as="button" className="text-ink-soft mt-8 block w-full text-center text-sm underline">
-                ログアウト
-            </Link>
         </MobileShell>
     );
 }

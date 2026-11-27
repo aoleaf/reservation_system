@@ -3,9 +3,6 @@
 export type ISODate = string; // 'YYYY-MM-DD'
 export type SlotId = string; // 中身をパースしない
 
-/** 枠の状態：営業／受付停止（今ある予約は残し、新しい予約だけ止める）／お休み（予約がない枠だけ） */
-export type SlotStatus = 'open' | 'paused' | 'closed';
-
 export type Slot = {
     id: SlotId;
     date: ISODate;
@@ -14,12 +11,11 @@ export type Slot = {
     capacity: number; // 6
     trialOpen: boolean; // 土日だけ true
     monthlyLimit: number | null; // 土日は settings.weekendMonthlyLimit、平日は null
-    status: SlotStatus;
+    blocked: boolean; // お休み
 };
 
 export type ReservationKind = 'trial' | 'monthly';
-/** 予約の経路。walkin は来店（口頭） */
-export type Channel = 'web' | 'phone' | 'dm' | 'walkin' | 'member' | 'staff';
+export type Channel = 'web' | 'phone' | 'dm' | 'member' | 'staff';
 export type ReservationStatus = 'pending' | 'confirmed' | 'canceled' | 'attended' | 'no_show';
 export type Contact = { name: string; phone: string; email?: string };
 
@@ -53,10 +49,4 @@ export type Settings = {
     stripeRate: number;
     sessionsPerMonth: number;
     weekendMonthlyLimit: number;
-    /** お店の電話番号（キャンセルの案内に出す） */
-    shopPhone: string;
-    /** 来月の日程の受付開始日（前月の何日から。仮の値・森下様に確認中） */
-    scheduleOpenDay: number;
-    /** 来月の日程の締め日（前月の何日まで） */
-    scheduleDeadlineDay: number;
 };
