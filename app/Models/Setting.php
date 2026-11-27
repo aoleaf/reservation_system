@@ -22,8 +22,6 @@ class Setting extends Model
             'schedule_open_months_before' => 'integer',
             'schedule_deadline_day' => 'integer',
             'checkout_hold_minutes' => 'integer',
-            'line_group_candidate_at' => 'immutable_datetime',
-            'line_digest_sent_at' => 'immutable_datetime',
         ];
     }
 

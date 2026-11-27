@@ -10,6 +10,4 @@ return [
     ],
     // 1枠の定員
     'capacity' => 6,
-    // LINE の朝のまとめを送る時刻（日本時間）
-    'line_digest_at' => '08:00',
 ];
