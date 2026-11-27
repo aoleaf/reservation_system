@@ -78,6 +78,9 @@ return [
     |
     */
 
+    // スケジューラーも日本時間で動かす（毎月1日の枠の作成・LINE の朝のまとめ）
+    'schedule_timezone' => 'Asia/Tokyo',
+
     'locale' => 'ja', // 日本語だけのサービスなので固定する（.env の APP_LOCALE に左右されない）
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),

@@ -36,6 +36,12 @@ return [
     ],
 
     // 体験の Web 予約の決済（ホスト型 Checkout）。secret が無いと、開発用の偽物の決済画面を使う（本番では使えない）
+    // LINE 通知（Messaging API）。お店の LINE グループに、朝のまとめと追加の予約を送る。token が無いと送らない（ログだけ）
+    'line' => [
+        'channel_access_token' => env('LINE_CHANNEL_ACCESS_TOKEN'),
+        'channel_secret' => env('LINE_CHANNEL_SECRET'),
+    ],
+
     'stripe' => [
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),

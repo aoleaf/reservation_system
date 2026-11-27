@@ -14,6 +14,8 @@ export const {
     cancelByStaff,
     resolveRefund,
     updateSettings,
+    chooseLineGroup,
+    testLine,
     requestMemberLogin,
     confirmMemberLogin,
 } = httpActions;
