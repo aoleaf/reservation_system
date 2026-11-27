@@ -50,10 +50,12 @@ php artisan import:monthly 12月の予約.csv --dry-run && php artisan import:mo
 - お休みの日は、スタッフの管理画面のカレンダーで設定する
 - 開発用のデータ（BookingDemoSeeder）は本番では入らない（`db:seed` を本番で流しても入れない）
 
-## AWS（EC2 とロードバランサー）で気をつけること
+## 本番の作り方
 
-- HTTPS はロードバランサー（ALB）で受け、EC2 には HTTP で渡す形を想定している。アプリはロードバランサーの `X-Forwarded-*` を信用する設定にしてある（bootstrap/app.php の trustProxies）
-- そのため、**EC2 のセキュリティグループは、ロードバランサーからだけ 80 番を受けるように絞る**こと。EC2 に直接届くと、IP を偽ったヘッダーで回数制限をすり抜けられる
+**サーバーの作り方は docs/lightsail-setup.md**（Lightsail のサーバー1台・Caddy で HTTPS・イメージは GitHub Actions で作る）。下の 3〜5 は、どのサーバーでも同じ考え方のまとめ。
+
+- アプリは、前のプロキシ（Caddy）の `X-Forwarded-*` を信用する設定にしてある（bootstrap/app.php の trustProxies）。そのため、**nginx（web）や PHP（app）を外に出さない**こと（deploy/docker-compose.yml では Caddy の 80・443 番だけを開けている）。外から直接届くと、IP を偽ったヘッダーで回数制限をすり抜けられる
+- Caddy は、お客様が送ってきた `X-Forwarded-For` を捨てて付け直す（手元の本番と同じ形で確認済み。lightsail-setup.md の 14）
 - APP_URL は https の URL にする
 
 ## 4. ずっと動かしておくもの
