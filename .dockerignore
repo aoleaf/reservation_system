@@ -1,0 +1,21 @@
+# 本番用のイメージに入れないもの（とくに .env と鍵は絶対に入れない）
+.git
+.github
+.env
+.env.*
+!.env.example
+*.deb
+node_modules
+vendor
+public/build
+public/hot
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/*
+bootstrap/cache/*.php
+database/*.sqlite
+tests
+docs
+deploy
