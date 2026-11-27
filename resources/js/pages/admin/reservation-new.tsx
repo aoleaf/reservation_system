@@ -118,7 +118,7 @@ export default function AdminReservationNew(props: AdminReservationNewProps) {
                                         <option value="">選んでください</option>
                                         {members.map((m) => (
                                             <option key={m.id} value={m.id}>
-                                                {m.id} {m.name}（{m.count}/{required}回）
+                                                {m.memberNo} {m.name}（{m.count}/{required}回）
                                             </option>
                                         ))}
                                     </select>
