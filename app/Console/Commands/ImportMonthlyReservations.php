@@ -11,6 +11,7 @@ use App\Models\Member;
 use App\Models\Reservation;
 use App\Models\Setting;
 use App\Models\Slot;
+use App\Support\ContactFormat;
 use App\Support\CsvFile;
 use App\Support\JaDate;
 use Carbon\CarbonImmutable;
@@ -47,7 +48,7 @@ class ImportMonthlyReservations extends Command
 
         DB::beginTransaction();
         foreach ($rows as ['line' => $line, 'row' => $r]) {
-            $member = Member::query()->whereRaw('lower(email) = ?', [mb_strtolower($r['メールアドレス'])])->first();
+            $member = Member::query()->where('email', ContactFormat::normalizeEmail($r['メールアドレス']))->first();
             $date = $this->date($r['日付']);
             $start = $this->time($r['開始時刻']);
             if (! $member) {

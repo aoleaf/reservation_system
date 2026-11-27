@@ -114,7 +114,7 @@ class PaymentWebhookTest extends TestCase
 
     public function test_開発用の決済画面で支払うと_完了画面が確定になる(): void
     {
-        $this->post('/reserve', ['slotId' => $this->slot->id, 'partySize' => 1, 'contact' => ['name' => 'a', 'phone' => '1', 'email' => 'a@example.com']], ['X-Inertia' => 'true']);
+        $this->post('/reserve', ['slotId' => $this->slot->id, 'partySize' => 1, 'contact' => ['name' => 'a', 'phone' => '090-1234-5678', 'email' => 'a@example.com']], ['X-Inertia' => 'true']);
         $r = Reservation::query()->sole();
         $this->get("/dev/checkout/{$r->stripe_checkout_session_id}")->assertOk()->assertSee('テストで支払う');
         $success = $this->post("/dev/checkout/{$r->stripe_checkout_session_id}/pay")->assertRedirect()->headers->get('Location');

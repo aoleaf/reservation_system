@@ -1,5 +1,6 @@
 import MobileShell from '@/components/mobile-shell';
 import { requestMemberLogin } from '@/lib/actions';
+import { EMAIL_MESSAGE, isEmail, normalizeEmail } from '@/lib/contact';
 import type { MemberLoginProps } from '@/types/pages';
 import { useState } from 'react';
 
@@ -10,12 +11,14 @@ export default function MemberLogin({ sent, email: sentTo, minutes, errors: page
     const [email, setEmail] = useState(sentTo);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
-    const messages = Object.values({ ...(pageErrors ?? {}), ...errors });
+    const emailValue = normalizeEmail(email);
+    const formatError = emailValue.includes('@') && emailValue.includes('.') && !isEmail(emailValue) ? EMAIL_MESSAGE : null;
+    const messages = Object.values({ ...(pageErrors ?? {}), ...errors, ...(formatError ? { format: formatError } : {}) });
 
     const send = () => {
         setBusy(true);
         setErrors({});
-        requestMemberLogin({ email }, { onError: setErrors, onFinish: () => setBusy(false) });
+        requestMemberLogin({ email: emailValue }, { onError: setErrors, onFinish: () => setBusy(false) });
     };
 
     return (
@@ -47,7 +50,7 @@ export default function MemberLogin({ sent, email: sentTo, minutes, errors: page
             <button
                 type="button"
                 onClick={send}
-                disabled={busy || email.trim() === ''}
+                disabled={busy || !isEmail(emailValue)}
                 className="bg-brand disabled:bg-line disabled:text-ink-soft mt-4 block w-full rounded-lg py-3 font-bold text-white"
             >
                 {sent ? 'もう一度リンクを送る' : 'ログイン用のリンクを送る'}

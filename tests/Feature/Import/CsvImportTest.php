@@ -33,7 +33,7 @@ class CsvImportTest extends TestCase
 
     public function test_生徒_エラーが1行でもあれば何も入れない(): void
     {
-        $f = $this->csv("名前,電話番号,メールアドレス\na,1,a@example.com\nb,2,not-an-email\nc,3,a@example.com\n");
+        $f = $this->csv("名前,電話番号,メールアドレス\na,090-1111-1111,a@example.com\nb,090-2222-2222,not-an-email\nc,090-3333-3333,a@example.com\n");
         $this->artisan('import:members', ['file' => $f])->expectsOutputToContain('3行目')->expectsOutputToContain('4行目')->assertFailed();
         $this->assertSame(0, Member::query()->count());
     }
@@ -41,7 +41,7 @@ class CsvImportTest extends TestCase
     public function test_生徒_見出しが無ければ止める_dry_run_は入れない(): void
     {
         $this->artisan('import:members', ['file' => $this->csv("名前,メール\n")])->expectsOutputToContain('見出しが足りません')->assertFailed();
-        $this->artisan('import:members', ['file' => $this->csv("名前,電話番号,メールアドレス\na,1,a@example.com\n"), '--dry-run' => true])->assertSuccessful();
+        $this->artisan('import:members', ['file' => $this->csv("名前,電話番号,メールアドレス\na,090-1111-1111,a@example.com\n"), '--dry-run' => true])->assertSuccessful();
         $this->assertSame(0, Member::query()->count());
     }
 

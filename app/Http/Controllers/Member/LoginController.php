@@ -8,6 +8,8 @@ use App\Mail\MemberLoginLink;
 use App\Models\Member;
 use App\Models\MemberLoginToken;
 use App\Models\User;
+use App\Rules\EmailAddress;
+use App\Support\ContactFormat;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,8 +40,9 @@ class LoginController extends Controller
     /** リンクを送る。同じメールアドレスへは10分に3回まで */
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate(['email' => ['required', 'email', 'max:255']], ['email.*' => 'メールアドレスを入力してください']);
-        $email = Str::lower(trim($data['email']));
+        $request->merge(['email' => ContactFormat::normalizeEmail($request->string('email'))]);
+        $data = $request->validate(['email' => ['required', new EmailAddress]], ['email.required' => 'メールアドレスを入力してください']);
+        $email = $data['email'];
         $key = 'member-login:'.hash('sha256', $email);
 
         if (! RateLimiter::tooManyAttempts($key, 3)) {
