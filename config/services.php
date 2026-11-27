@@ -35,10 +35,4 @@ return [
         ],
     ],
 
-    // 体験の Web 予約の決済（ホスト型 Checkout）。secret が無いと、開発用の偽物の決済画面を使う（本番では使えない）
-    'stripe' => [
-        'secret' => env('STRIPE_SECRET'),
-        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-    ],
-
 ];

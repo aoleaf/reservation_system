@@ -1,4 +1,5 @@
-import AdminShell from '@/components/admin-shell';
+import AdminTabs from '@/components/admin-tabs';
+import MobileShell from '@/components/mobile-shell';
 import StatusBadge from '@/components/status-badge';
 import type { AdminMembersProps } from '@/types/pages';
 import { Link } from '@inertiajs/react';
@@ -15,30 +16,27 @@ export default function AdminMembers({ monthLabel, filter, counts, members }: Ad
         </Link>
     );
     return (
-        <AdminShell title="生徒一覧" current="members">
-            <div className="md:max-w-3xl">
-                <p className="mb-2 text-sm">
-                    {monthLabel}の日程：未提出 <span className="text-alert font-bold">{counts.unsubmitted}名</span>／{counts.all}名
-                </p>
-                <div className="border-line mb-3 flex gap-1 rounded-lg border bg-white p-1">
-                    {tab('all', `全員（${counts.all}）`)}
-                    {tab('unsubmitted', `未提出だけ（${counts.unsubmitted}）`)}
-                </div>
-                <ul className="border-line divide-line divide-y rounded-lg border bg-white">
-                    {members.map((m) => (
-                        <li key={m.id}>
-                            <Link href={route('admin.members.show', m.id)} className="flex items-center gap-2 px-3 py-2.5 text-sm">
-                                <span className="text-ink-soft w-8 text-xs tabular-nums">{m.id}</span>
-                                <span className="min-w-0 flex-1 truncate">{m.name}</span>
-                                <span className="text-ink-soft hidden w-36 text-xs tabular-nums md:block">{m.phone}</span>
-                                <StatusBadge kind={m.submitted ? 'submitted' : 'unsubmitted'} />
-                                <ChevronRight className="text-ink-soft h-4 w-4" />
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-                {members.length === 0 && <p className="text-ink-soft mt-3 text-sm">該当する生徒さんはいません。</p>}
+        <MobileShell title="生徒一覧" variant="staff" footer={<AdminTabs current="members" />}>
+            <p className="mb-2 text-sm">
+                {monthLabel}の日程：未提出 <span className="text-alert font-bold">{counts.unsubmitted}名</span>／{counts.all}名
+            </p>
+            <div className="border-line mb-3 flex gap-1 rounded-lg border bg-white p-1">
+                {tab('all', `全員（${counts.all}）`)}
+                {tab('unsubmitted', `未提出だけ（${counts.unsubmitted}）`)}
             </div>
-        </AdminShell>
+            <ul className="border-line divide-line divide-y rounded-lg border bg-white">
+                {members.map((m) => (
+                    <li key={m.id}>
+                        <Link href={route('admin.members.show', m.id)} className="flex items-center gap-2 px-3 py-2.5 text-sm">
+                            <span className="text-ink-soft w-8 text-xs tabular-nums">{m.id}</span>
+                            <span className="min-w-0 flex-1 truncate">{m.name}</span>
+                            <StatusBadge kind={m.submitted ? 'submitted' : 'unsubmitted'} />
+                            <ChevronRight className="text-ink-soft h-4 w-4" />
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+            {members.length === 0 && <p className="text-ink-soft mt-3 text-sm">該当する生徒さんはいません。</p>}
+        </MobileShell>
     );
 }

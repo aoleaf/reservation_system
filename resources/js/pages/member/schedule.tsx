@@ -5,7 +5,7 @@ import { submitMonthlySchedule } from '@/lib/actions';
 import type { MemberScheduleProps, SlotView } from '@/types/pages';
 import { useState } from 'react';
 
-/** 日程を選ぶ（来月・再来月）。選択中の枠はこの画面の state で持ち、ストアに置かない */
+/** 来月の日程を選ぶ。選択中の枠はこの画面の state で持ち、ストアに置かない */
 export default function MemberSchedule({ month, monthLabel, unavailable, required, leadingBlanks, days }: MemberScheduleProps) {
     const [picked, setPicked] = useState<SlotView[]>([]);
     const [activeDate, setActiveDate] = useState(days.find((d) => d.selectable)?.date ?? '');
@@ -15,7 +15,7 @@ export default function MemberSchedule({ month, monthLabel, unavailable, require
 
     if (unavailable) {
         return (
-            <MobileShell title="日程を選ぶ" back={route('member.index')}>
+            <MobileShell title="来月の日程を選ぶ" back={route('member.index')}>
                 <NotFound message={unavailable} backHref={route('member.index')} backLabel="マイページへ戻る" />
             </MobileShell>
         );
@@ -43,7 +43,7 @@ export default function MemberSchedule({ month, monthLabel, unavailable, require
     };
 
     return (
-        <MobileShell title="日程を選ぶ" back={route('member.index')}>
+        <MobileShell title="来月の日程を選ぶ" back={route('member.index')}>
             <p className="mb-3 text-sm">
                 {monthLabel}のレッスンを<span className="font-bold">{required}回</span>選んでください。グレーの日は選べません。
             </p>
