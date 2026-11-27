@@ -1,0 +1,77 @@
+# 本番（Lightsail のサーバー1台）の構成。イメージは GitHub Actions が作って GHCR に置いたものを使う（サーバーではビルドしない）。
+# 外に開けるのは Caddy の 80・443 番だけ。nginx（web）・PHP（app）・MySQL（db）は外に出さない。
+# 値は同じフォルダの .env から読む（deploy/.env.example を写して書く）。
+name: tsuchinone
+
+x-app: &app
+  image: ${IMAGE_PREFIX:-ghcr.io/aoleaf/reservation_system}-app:${IMAGE_TAG:-latest}
+  env_file: .env
+  restart: unless-stopped
+  volumes:
+    - storage:/var/www/html/storage
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  # HTTPS（Let's Encrypt の証明書を自動で取り、自動で更新する）
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+
+  # 画面の静的なファイル・PHP への受け渡し
+  web:
+    image: ${IMAGE_PREFIX:-ghcr.io/aoleaf/reservation_system}-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - app
+
+  app:
+    <<: *app
+
+  # キューのワーカー（予約確認・キャンセル受付のメール、LINE の追加の通知）
+  queue:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "--tries=3", "--backoff=30", "--max-time=3600"]
+
+  # スケジューラー（期限切れの仮押さえ・毎月1日の枠・毎朝の LINE のまとめ）
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work"]
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: Asia/Tokyo
+    # メモリ 2GB のサーバーなので、MySQL の使う量を抑える
+    command: ["--innodb-buffer-pool-size=256M", "--max-connections=50"]
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  storage:
+  db-data:
+  caddy-data:
+  caddy-config:
