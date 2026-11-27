@@ -8,7 +8,6 @@ use App\Enums\Channel;
 use App\Enums\RefundStatus;
 use App\Enums\ReservationKind;
 use App\Enums\ReservationStatus;
-use App\Jobs\NotifyAddedReservation;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -53,16 +52,6 @@ class Reservation extends Model
             'expires_at' => 'immutable_datetime',
             'canceled_at' => 'immutable_datetime',
         ];
-    }
-
-    /** 予約が確定したら、LINE の追加の通知を考える（朝のまとめのあとに入った今日の予約だけが送られる） */
-    protected static function booted(): void
-    {
-        static::saved(function (Reservation $r) {
-            if ($r->status === ReservationStatus::Confirmed && ($r->wasRecentlyCreated || $r->wasChanged('status'))) {
-                NotifyAddedReservation::dispatch($r)->afterCommit();
-            }
-        });
     }
 
     public function slot(): BelongsTo

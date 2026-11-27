@@ -119,8 +119,7 @@ class BookingDemoSeeder extends Seeder
         // 受付停止のデモ：予約が入ったまま、新しい予約だけ止めている枠
         $this->slots[$this->slotKey('2026-12-12', '10:00')]['status'] = 'paused';
 
-        // 予約を作るたびの LINE の追加の通知（キューの仕事）は、開発用のデータでは要らない
-        Reservation::withoutEvents(fn () => $this->save($members, $memberMonths));
+        $this->save($members, $memberMonths);
     }
 
     private function slotKey(string $date, string $start): string

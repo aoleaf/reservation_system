@@ -249,20 +249,6 @@ export type AdminReservationNewProps = {
 /** 設定（今は体験の料金だけを変えられる） */
 export type AdminSettingsProps = {
     trialPrice: number;
-    /** LINE 通知（お店のグループに、朝のまとめと追加の予約） */
-    line: {
-        /** トークンが入っているか（入っていないと送らずにログだけ） */
-        configured: boolean;
-        /** 送り先のグループ（一部を伏せた ID）。決まっていなければ null */
-        group: string | null;
-        /** 公式アカウントを招待したグループ（まだ送り先にしていないもの） */
-        candidate: { id: string; at: string } | null;
-        digestAt: string;
-        lastSentAt: string | null;
-    };
-    /** 「テスト送信しました」など */
-    notice?: string | null;
-    errors?: Record<string, string>;
 };
 
 export type AdminMembersProps = {

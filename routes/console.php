@@ -12,6 +12,3 @@ Illuminate\Support\Facades\Schedule::command('slots:generate')->monthlyOn(1, '03
 
 // 期限が切れた仮押さえを戻す（Stripe の期限切れの通知が届かなかったときの保険）
 Illuminate\Support\Facades\Schedule::command('reservations:expire-holds')->everyMinute();
-
-// 毎朝、お店の LINE グループにその日の予約のまとめを送る（日本時間）
-Illuminate\Support\Facades\Schedule::command('line:daily-digest')->dailyAt(config('booking.line_digest_at'));

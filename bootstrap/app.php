@@ -18,8 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // EC2 にはロードバランサーからしか届かないよう、セキュリティグループで絞ること（docs/release.md）
         $middleware->trustProxies(at: '*');
 
-        // Stripe・LINE の通知は、それぞれの署名で確かめるので CSRF の対象外
-        $middleware->validateCsrfTokens(except: ['stripe/webhook', 'line/webhook']);
+        // Stripe の通知は、Stripe の署名で確かめるので CSRF の対象外
+        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
 
         $middleware->alias([
             'staff' => \App\Http\Middleware\EnsureStaff::class,

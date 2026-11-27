@@ -30,8 +30,6 @@
         <env name="RESEND_KEY" value=""/>
         <env name="STRIPE_SECRET" value=""/>
         <env name="STRIPE_WEBHOOK_SECRET" value=""/>
-        <env name="LINE_CHANNEL_ACCESS_TOKEN" value=""/>
-        <env name="LINE_CHANNEL_SECRET" value=""/>
         <env name="APP_URL" value="http://localhost"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
