@@ -15,8 +15,14 @@ export default function AdminMemberShow({ member, months }: AdminMemberShowProps
                     <section className="border-line mb-4 rounded-lg border bg-white p-3 text-sm">
                         <p className="text-lg font-bold">{member.name}</p>
                         <p className="text-ink-soft mt-1">
-                            {member.id}・{member.phone}・{member.email}
+                            {member.memberNo}・{member.phone}
+                            {member.email && `・${member.email}`}
                         </p>
+                        {!member.email && (
+                            <p className="text-ink-soft mt-1 text-xs">
+                                メールアドレスが無いので、ログインのメールは届きません。予約はここから入れてください。
+                            </p>
+                        )}
                     </section>
                     <div className="md:grid md:grid-cols-2 md:gap-4">
                         {months.map((m) => (

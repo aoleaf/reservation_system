@@ -238,7 +238,8 @@ export type AdminReservationNewProps = {
     /** 月謝のときだけ：その日の月での各生徒の回数と、もう入っている日 */
     monthLabel: string;
     required: number;
-    members: { id: string; name: string; count: number; dates: ISODate[] }[];
+    /** memberNo は会員番号（T001） */
+    members: { id: string; memberNo: string; name: string; count: number; dates: ISODate[] }[];
     initialMemberId: string | null;
     dateOptions: { date: ISODate; label: string }[];
     slots: SlotView[];
@@ -270,10 +271,12 @@ export type AdminMembersProps = {
     monthLabel: string;
     filter: 'all' | 'unsubmitted';
     counts: { all: number; unsubmitted: number };
-    members: { id: string; name: string; phone: string; submitted: boolean }[];
+    /** 会員番号の順。memberNo は会員番号（T001） */
+    members: { id: string; memberNo: string; name: string; phone: string; submitted: boolean }[];
 };
 
 export type AdminMemberShowProps = {
-    member: { id: string; name: string; phone: string; email: string } | null;
+    /** email はメールの無い生徒さんだと null（ログインのメールが届かない） */
+    member: { id: string; memberNo: string; name: string; phone: string; email: string | null } | null;
     months: { month: string; label: string; submitted: boolean; changeRemaining: number; sessions: string[] }[];
 };

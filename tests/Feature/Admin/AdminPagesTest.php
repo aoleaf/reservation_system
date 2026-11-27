@@ -120,6 +120,7 @@ class AdminPagesTest extends TestCase
             ->where('counts', ['all' => 2, 'unsubmitted' => 1])
             ->has('members', 1)
             ->where('members.0.name', '佐藤 陽子')
+            ->where('members.0.memberNo', $this->member->member_no)
         );
     }
 
@@ -127,9 +128,25 @@ class AdminPagesTest extends TestCase
     {
         $this->actingAs($this->staff)->get("/admin/members/{$this->member->id}")->assertInertia(fn (Assert $page) => $page
             ->where('member.name', '佐藤 陽子')
+            ->where('member.memberNo', $this->member->member_no)
             ->where('months.1.sessions', ['12月5日（土） 10:00〜12:00'])
         );
         $this->actingAs($this->staff)->get('/admin/members/abc')->assertInertia(fn (Assert $page) => $page->where('member', null)->where('months', []));
+    }
+
+    public function test_生徒一覧は会員番号の順_メールの無い生徒さんの詳細(): void
+    {
+        Member::factory()->create(['member_no' => 'T1000']);
+        $noMail = Member::factory()->create(['member_no' => 'T999', 'email' => null]);
+        $this->actingAs($this->staff)->get('/admin/members')->assertInertia(fn (Assert $page) => $page
+            ->where('members.0.memberNo', $this->member->member_no)
+            ->where('members.1.memberNo', 'T999')
+            ->where('members.2.memberNo', 'T1000')
+        );
+        $this->actingAs($this->staff)->get("/admin/members/{$noMail->id}")->assertInertia(fn (Assert $page) => $page
+            ->where('member.memberNo', 'T999')
+            ->where('member.email', null)
+        );
     }
 
     public function test_お休みの日(): void
