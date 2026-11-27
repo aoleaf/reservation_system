@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,11 +12,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // 開発用のデータ（モックと同じ生徒・予約）。本番では入れない
+        if (! app()->isProduction()) {
+            $this->call(BookingDemoSeeder::class);
+            // 「再来月」の受付を確かめられるよう、2027年1月の枠も作る（予約は入れない）
+            $this->command?->call('slots:generate', ['month' => '2027-01']);
+        }
     }
 }

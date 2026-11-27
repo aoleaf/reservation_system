@@ -1,0 +1,12 @@
+# HTTPS の入口。証明書（Let's Encrypt）は自動で取り、自動で更新する。
+# お客様が送ってきた X-Forwarded-For は信用せず、Caddy が付け直して nginx に渡す
+{$APP_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	reverse_proxy web:80
+}

@@ -8,7 +8,6 @@
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
-        "test:fe": "vitest run",
         "types": "tsc --noEmit"
     },
     "devDependencies": {
@@ -20,8 +19,7 @@
         "prettier": "^3.4.2",
         "prettier-plugin-organize-imports": "^4.1.0",
         "prettier-plugin-tailwindcss": "^0.6.11",
-        "typescript-eslint": "^8.23.0",
-        "vitest": "^5.1.0"
+        "typescript-eslint": "^8.23.0"
     },
     "dependencies": {
         "@headlessui/react": "^2.2.0",
@@ -56,8 +54,7 @@
         "tailwindcss": "^4.0.0",
         "tailwindcss-animate": "^1.0.7",
         "typescript": "^5.7.2",
-        "vite": "^6.0",
-        "zustand": "^5.1.0"
+        "vite": "^6.0"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",

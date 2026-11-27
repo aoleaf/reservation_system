@@ -33,7 +33,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // スタッフは管理画面へ
+        $home = $request->user()->isStaff() ? 'admin.today' : 'dashboard';
+
+        return redirect()->intended(route($home, absolute: false));
     }
 
     /**

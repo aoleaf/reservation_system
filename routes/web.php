@@ -1,85 +1,85 @@
 <?php
 
+use App\Http\Controllers\Admin;
+use App\Http\Controllers\CancelController;
+use App\Http\Controllers\Dev;
+use App\Http\Controllers\Member;
+use App\Http\Controllers\LineWebhookController;
+use App\Http\Controllers\ReserveController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 /*
-| FEモック期のルート。
-| サーバーは URL のパラメーターだけを props で渡す。残りの props は
-| モック中は resources/js/mocks/props.ts の builder が作り、本番ではコントローラーが作る。
-| 予約・生徒・スタッフの画面には auth ミドルウェアを付けない（モック期のみ）。
+| 画面の props はコントローラーが作る（resources/js/types/pages.ts と同じ形）。
+| 書き込みは resources/js/lib/actions/http.ts の送り先で受ける。
 */
 
-Route::get('/', fn () => Inertia::render('demo'))->name('demo');
+// 入口はお客様の予約のページ
+Route::redirect('/', '/reserve')->name('home');
 
-// お客様：体験予約
-Route::get('/reserve', fn () => Inertia::render('reserve/index'))->name('reserve.index');
+// お客様：体験予約。props はコントローラーが作る（types/pages.ts と同じ形）
+Route::get('/reserve', [ReserveController::class, 'index'])->name('reserve.index');
+Route::get('/reserve/form', [ReserveController::class, 'form'])->name('reserve.form');
+Route::get('/reserve/confirm', [ReserveController::class, 'confirm'])->name('reserve.confirm');
+Route::post('/reserve', [ReserveController::class, 'store'])->middleware('throttle:20,10')->name('reserve.store'); // 仮押さえ → 決済へ
+Route::get('/reserve/complete/{code}', [ReserveController::class, 'complete'])->name('reserve.complete'); // 署名付き
+Route::get('/reserve/abandon/{code}', [ReserveController::class, 'abandon'])->name('reserve.abandon'); // 署名付き・払わずに戻った
 
-Route::get('/reserve/form', fn (Request $r) => Inertia::render('reserve/form', [
-    'slotId' => $r->query('slot'),
-    'n' => $r->query('n'),
-    'name' => $r->query('name'),
-    'phone' => $r->query('phone'),
-    'email' => $r->query('email'),
-]))->name('reserve.form');
+// キャンセル用リンク（予約確認メールに入る）
+Route::get('/r/{token}/cancel', [CancelController::class, 'show'])->name('reserve.cancel');
+Route::post('/r/{token}/cancel', [CancelController::class, 'store'])->middleware('throttle:10,10')->name('reserve.cancel.store');
 
-Route::get('/reserve/confirm', fn (Request $r) => Inertia::render('reserve/confirm', [
-    'slotId' => $r->query('slot'),
-    'n' => $r->query('n'),
-    'name' => $r->query('name'),
-    'phone' => $r->query('phone'),
-    'email' => $r->query('email'),
-]))->name('reserve.confirm');
-
-Route::get('/reserve/complete/{id}', fn (string $id) => Inertia::render('reserve/complete', [
-    'reservationId' => $id,
-]))->name('reserve.complete');
-
-Route::get('/r/{token}/cancel', fn (string $token) => Inertia::render('reserve/cancel', [
-    'token' => $token,
-]))->name('reserve.cancel');
-
-// 生徒さん
-Route::get('/member', fn () => Inertia::render('member/index'))->name('member.index');
-
-Route::get('/member/schedule/{month}', fn (string $month) => Inertia::render('member/schedule', [
-    'month' => $month,
-]))->name('member.schedule');
-
-Route::get('/member/change/{id}', fn (string $id) => Inertia::render('member/change', [
-    'reservationId' => $id,
-]))->name('member.change');
-
-// スタッフ
-Route::get('/admin', fn (Request $r) => Inertia::render('admin/today', [
-    'date' => $r->query('date'),
-]))->name('admin.today');
-
-Route::get('/admin/reservations/new', fn (Request $r) => Inertia::render('admin/reservation-new', [
-    'date' => $r->query('date'),
-    'slotId' => $r->query('slot'),
-    'kind' => $r->query('kind'),
-    'member' => $r->query('member'),
-]))->name('admin.reservations.new');
-
-Route::get('/admin/slots', fn (Request $r) => Inertia::render('admin/slots', [
-    'month' => $r->query('month'),
-]))->name('admin.slots');
-
-Route::get('/admin/members', fn (Request $r) => Inertia::render('admin/members', [
-    'filter' => $r->query('filter'),
-]))->name('admin.members');
-
-Route::get('/admin/members/{id}', fn (string $id) => Inertia::render('admin/member-show', [
-    'memberId' => $id,
-]))->name('admin.members.show');
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+// 生徒さんのログイン（メールのリンク）
+Route::prefix('member/login')->name('member.login')->group(function () {
+    Route::get('/', [Member\LoginController::class, 'create']);
+    Route::post('/', [Member\LoginController::class, 'store'])->middleware('throttle:10,10')->name('.store'); // 同じ IP から10分に10回まで
+    Route::get('/{token}', [Member\LoginController::class, 'confirm'])->name('.confirm');
+    Route::post('/{token}', [Member\LoginController::class, 'consume'])->middleware('throttle:20,10')->name('.consume');
 });
+
+// 生徒さん（メールのリンクでログインした生徒さんだけ）。props はコントローラーが作る
+Route::middleware('member')->prefix('member')->name('member.')->group(function () {
+    Route::get('/', [Member\MemberController::class, 'index'])->name('index');
+    Route::get('/schedule/{month}', [Member\MemberController::class, 'schedule'])->name('schedule');
+    Route::post('/schedule/{month}', [Member\MemberController::class, 'submit'])->name('schedule.store');
+    Route::get('/change/{id}', [Member\MemberController::class, 'change'])->name('change');
+    Route::post('/change/{reservation}', [Member\MemberController::class, 'changeStore'])->name('change.store');
+});
+
+// スタッフ（ログインしたスタッフだけ）。props はコントローラーが作る（types/pages.ts と同じ形）
+Route::middleware(['auth', 'staff'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', Admin\TodayController::class)->name('today');
+    Route::get('/reservations/new', [Admin\ReservationController::class, 'create'])->name('reservations.new');
+    Route::post('/reservations', [Admin\ReservationController::class, 'store'])->name('reservations.store');
+    Route::post('/reservations/{reservation}/cancel', [Admin\ReservationController::class, 'cancel'])->name('reservations.cancel');
+    Route::post('/reservations/{reservation}/refund-resolved', [Admin\ReservationController::class, 'refundResolved'])->name('reservations.refund-resolved');
+    Route::get('/slots', [Admin\SlotController::class, 'index'])->name('slots');
+    Route::patch('/slots/{slot}', [Admin\SlotController::class, 'update'])->name('slots.update');
+    Route::patch('/days/{date}', [Admin\SlotController::class, 'updateDay'])->name('days.update');
+    Route::get('/settings', [Admin\SettingsController::class, 'edit'])->name('settings');
+    Route::patch('/settings', [Admin\SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/line/group', [Admin\SettingsController::class, 'chooseLineGroup'])->name('settings.line.group');
+    Route::post('/settings/line/test', [Admin\SettingsController::class, 'testLine'])->name('settings.line.test');
+    Route::get('/members', [Admin\MemberController::class, 'index'])->name('members');
+    Route::get('/members/{id}', [Admin\MemberController::class, 'show'])->name('members.show');
+});
+
+// Stripe の通知（署名で確かめる）
+Route::post('/stripe/webhook', StripeWebhookController::class)->name('stripe.webhook');
+
+// LINE の通知（署名で確かめる。グループに招待されたら送り先の候補にする）
+Route::post('/line/webhook', LineWebhookController::class)->name('line.webhook');
+
+// 開発用の偽物の決済画面（Stripe のキーが無い開発環境だけ。本番では作らない）
+if (! app()->isProduction()) {
+    Route::get('/dev/checkout/{id}', [Dev\DevCheckoutController::class, 'show'])->name('dev.checkout.show');
+    Route::post('/dev/checkout/{id}/pay', [Dev\DevCheckoutController::class, 'pay'])->name('dev.checkout.pay');
+}
+
+// ログイン後の入口：スタッフは管理画面、生徒さんはマイページへ
+Route::middleware(['auth'])->get('dashboard', fn (Request $r) => redirect()->route($r->user()->isStaff() ? 'admin.today' : 'member.index'))->name('dashboard');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
