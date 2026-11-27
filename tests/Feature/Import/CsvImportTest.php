@@ -101,6 +101,30 @@ class CsvImportTest extends TestCase
         $this->assertSame(4, Reservation::query()->count());
     }
 
+    public function test_月謝の予約_会員番号で生徒さんを探す_メールが無くてもよい(): void
+    {
+        $this->artisan('slots:generate', ['month' => '2026-12']);
+        $m = Member::factory()->create(['member_no' => 'T005', 'email' => null]);
+        $csv = "会員番号,日付,開始時刻\nT005,2026-12-01,10:00\nｔ００５,2026-12-03,13:00\n";
+        $this->artisan('import:monthly', ['file' => $this->csv($csv, sjis: true)])->expectsOutputToContain('入れた 2 件')->assertSuccessful();
+        $this->assertSame(2, $m->sessionsIn('2026-12')->count());
+    }
+
+    public function test_月謝の予約_会員番号が無い_形が違う_いない番号はエラー(): void
+    {
+        $this->artisan('slots:generate', ['month' => '2026-12']);
+        Member::factory()->create(['member_no' => 'T001']);
+        $csv = "会員番号,日付,開始時刻\n,2026-12-01,10:00\nX1,2026-12-01,10:00\nT099,2026-12-01,10:00\nT001,2026-12-01,10:00\n";
+        $this->artisan('import:monthly', ['file' => $this->csv($csv)])
+            ->expectsOutputToContain('2行目：会員番号を書いてください')
+            ->expectsOutputToContain('3行目：会員番号「X1」の形が違います')
+            ->expectsOutputToContain('4行目：会員番号 T099 の生徒さんがいません')
+            ->assertFailed();
+        $this->assertSame(0, Reservation::query()->count());
+
+        $this->artisan('import:monthly', ['file' => $this->csv("名前,日付,開始時刻\na,2026-12-01,10:00\n")])->expectsOutputToContain('見出しが足りません：会員番号')->assertFailed();
+    }
+
     public function test_月謝の予約_満席_同じ日_いない生徒_無い枠はエラーで何も入れない(): void
     {
         $this->artisan('slots:generate', ['month' => '2026-12']);
