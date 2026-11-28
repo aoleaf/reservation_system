@@ -102,6 +102,36 @@ class AdminPagesTest extends TestCase
         );
     }
 
+    public function test_予約入力_日付の候補は枠と同じ日の文字列で_選んだ日の枠だけを出す(): void
+    {
+        // 日本時間の 0:00 は UTC では前の日。日付をオブジェクトのまま JSON にすると前の日になるので、そのずれを確かめる
+        $this->assertSame('Asia/Tokyo', date_default_timezone_get());
+        $sun = Slot::factory()->weekend('2026-12-06')->create(['start_time' => '10:00', 'end_time' => '12:00']);
+        Slot::factory()->weekend('2026-12-12')->create(['start_time' => '10:00', 'end_time' => '12:00']);
+        Slot::factory()->create(['date' => '2026-12-07']); // 平日（体験の候補には出ない）
+        Slot::factory()->weekend('2026-11-15')->create(); // 過ぎた日（出ない）
+
+        $this->actingAs($this->staff)->get('/admin/reservations/new')->assertInertia(fn (Assert $page) => $page
+            ->where('dateOptions', [
+                ['date' => '2026-12-05', 'label' => '12月5日（土）'],
+                ['date' => '2026-12-06', 'label' => '12月6日（日）'],
+                ['date' => '2026-12-12', 'label' => '12月12日（土）'],
+            ])
+        );
+        $this->actingAs($this->staff)->get('/admin/reservations/new?kind=monthly')->assertInertia(fn (Assert $page) => $page
+            ->where('dateOptions.2', ['date' => '2026-12-07', 'label' => '12月7日（月）'])
+        );
+
+        // 候補の date をそのまま ?date= に入れると、その日の画面になり、その日の枠だけが出る
+        $this->actingAs($this->staff)->get('/admin/reservations/new?date=2026-12-06')->assertInertia(fn (Assert $page) => $page
+            ->where('date', '2026-12-06')
+            ->where('label', '12月6日（日）')
+            ->has('slots', 1)
+            ->where('slots.0.id', (string) $sun->id)
+            ->where('slots.0.date', '2026-12-06')
+        );
+    }
+
     public function test_予約入力_平日の体験は説明を出す(): void
     {
         Slot::factory()->create(['date' => '2026-12-07']);
