@@ -130,7 +130,7 @@ docker compose exec app php artisan import:monthly /tmp/monthly.csv
 1. Resend で送信元のドメイン（例：`mail.（ドメイン）`）を追加し、表示された DNS のレコード（SPF・DKIM）を DNS に登録して「Verify」
 2. API キーを作る（Sending access・そのドメインだけ）
 3. `.env`：`MAIL_MAILER=resend`・`RESEND_KEY`・`MAIL_FROM_ADDRESS="yoyaku@mail.（ドメイン）"`
-4. `docker compose up -d`（設定は起動のたびに読み直す）
+4. `docker compose up -d`（.env を読み直す。下の「16. 困ったとき」の「設定を読み直す」）
 5. 自分のメールアドレスで生徒を1人登録し、生徒のログインのメールが届くか確かめる
 
 ## 10. 決済（Stripe）
@@ -202,4 +202,7 @@ docker compose exec scheduler php artisan schedule:list
 | 証明書・アクセス | `docker compose logs caddy --tail 100` |
 | メールや LINE の送信 | `docker compose logs queue --tail 100` |
 | 失敗したキューの仕事 | `docker compose exec app php artisan queue:failed` |
-| 設定を読み直す | `docker compose up -d`（起動のたびに .env から作り直す） |
+| 設定を読み直す | `docker compose up -d`（下を参照） |
+| 502 が続く | `docker compose restart web`（ふつうは要らない。下を参照） |
+
+**設定を読み直す（`.env` を変えたとき）**：`docker compose up -d` を流すと、`.env` を使うコンテナ（app・queue・scheduler）だけが作り直されて、新しい `.env` を読む。作り直した app は IP が変わるが、web（nginx）は app の IP を Docker の DNS で引き直す（10秒ごと。docker/prod/nginx.conf の `resolver`）ので、web と Caddy は作り直さなくてよい。作り直した直後の数秒は 502 が出ることがある。1分たっても 502 のままなら `docker compose logs web --tail 50` を見て、`docker compose restart web`
