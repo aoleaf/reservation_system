@@ -16,6 +16,7 @@ use App\Services\Booking\CancellationService;
 use App\Services\Booking\StaffReservationService;
 use App\Support\ContactFormat;
 use App\Support\JaDate;
+use Carbon\CarbonImmutable;
 use App\Support\MemberNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,7 +43,9 @@ class ReservationController extends Controller
             ->when($kind === ReservationKind::Trial, fn ($q) => $q->where('trial_open', true))
             ->orderBy('date')->distinct()->limit($kind === ReservationKind::Monthly ? 21 : 12)
             ->pluck('date')
-            ->map(fn ($d) => ['date' => $d, 'label' => JaDate::dayLabel($d)])->all();
+            // pluck でも Slot の date は日付のオブジェクトになり、そのまま JSON にすると UTC の時刻つき（日本時間の前の日）になる。'YYYY-MM-DD' に直す
+            ->map(fn (CarbonImmutable $d) => $d->format('Y-m-d'))
+            ->map(fn (string $d) => ['date' => $d, 'label' => JaDate::dayLabel($d)])->all();
 
         $dateNote = null;
         if ($raw->isEmpty()) {
